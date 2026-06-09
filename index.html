@@ -5,50 +5,61 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
   <title>EbubZ AI</title>
   <style>
+    :root {
+      --bg: #1a1a2e;
+      --sidebar-bg: #16213e;
+      --msg-bot: #2a2a4a;
+      --msg-user: #0f3460;
+      --header-bg: #0f3460;
+      --input-bg: #1a1a2e;
+      --text: #e0e0e0;
+      --border: #2a2a4a;
+      --accent: #e94560;
+      --code-bg: #0d1117;
+    }
+    body.light {
+      --bg: #f5f5f5;
+      --sidebar-bg: #ffffff;
+      --msg-bot: #e9e9eb;
+      --msg-user: #d1e4ff;
+      --header-bg: #e0e0e0;
+      --input-bg: #ffffff;
+      --text: #1a1a1a;
+      --border: #cccccc;
+      --accent: #d6336c;
+      --code-bg: #f0f0f0;
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      background: #1a1a2e;
-      color: #e0e0e0;
+      background: var(--bg);
+      color: var(--text);
       font-family: 'Segoe UI', system-ui, sans-serif;
       height: 100vh;
       overflow: hidden;
     }
-
-    .app {
-      display: flex;
-      height: 100vh;
-      width: 100%;
-    }
+    .app { display: flex; height: 100vh; width: 100%; }
 
     /* SIDEBAR */
     .sidebar {
       width: 280px;
-      background: #16213e;
-      border-right: 1px solid #2a2a4a;
+      background: var(--sidebar-bg);
+      border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
       transition: transform 0.3s ease;
-      position: relative;
       z-index: 10;
     }
     .sidebar-header {
       padding: 16px;
-      border-bottom: 1px solid #2a2a4a;
+      border-bottom: 1px solid var(--border);
       display: flex;
       flex-direction: column;
       gap: 8px;
     }
-    .sidebar-header h1 {
-      font-size: 1.2rem;
-      font-weight: 600;
-    }
-    .sidebar-header .creator {
-      font-size: 0.7rem;
-      opacity: 0.6;
-    }
+    .sidebar-header h1 { font-size: 1.2rem; font-weight: 600; }
+    .sidebar-header .creator { font-size: 0.7rem; opacity: 0.6; }
     .new-chat-btn, .clear-all-btn {
-      display: block;
       width: 100%;
       padding: 10px;
       color: #fff;
@@ -59,22 +70,11 @@
       transition: background 0.2s;
       margin-top: 8px;
     }
-    .new-chat-btn {
-      background: #e94560;
-    }
-    .new-chat-btn:hover { background: #c23152; }
-    .clear-all-btn {
-      background: #333;
-      margin-top: 4px;
-      font-size: 0.8rem;
-    }
-    .clear-all-btn:hover { background: #555; }
-
-    .chat-list {
-      flex: 1;
-      overflow-y: auto;
-      padding: 8px;
-    }
+    .new-chat-btn { background: var(--accent); }
+    .new-chat-btn:hover { filter: brightness(1.1); }
+    .clear-all-btn { background: #555; margin-top: 4px; font-size: 0.8rem; }
+    .clear-all-btn:hover { background: #777; }
+    .chat-list { flex: 1; overflow-y: auto; padding: 8px; }
     .chat-item {
       padding: 10px 12px;
       border-radius: 6px;
@@ -84,26 +84,12 @@
       align-items: center;
       margin-bottom: 4px;
       word-break: break-word;
+      color: var(--text);
     }
-    .chat-item:hover { background: #2a2a5a; }
-    .chat-item.active { background: #0f3460; }
-    .chat-item .title {
-      flex: 1;
-      font-size: 0.9rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .chat-item .delete-btn {
-      background: none;
-      border: none;
-      color: #e94560;
-      font-size: 1rem;
-      cursor: pointer;
-      margin-left: 8px;
-      opacity: 0.6;
-      transition: opacity 0.2s;
-    }
+    .chat-item:hover { background: rgba(255,255,255,0.1); }
+    .chat-item.active { background: var(--header-bg); }
+    .chat-item .title { flex: 1; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chat-item .delete-btn { background: none; border: none; color: var(--accent); font-size: 1rem; cursor: pointer; margin-left: 8px; opacity: 0.6; }
     .chat-item .delete-btn:hover { opacity: 1; }
 
     /* MAIN */
@@ -111,64 +97,50 @@
       flex: 1;
       display: flex;
       flex-direction: column;
-      background: #1a1a2e;
+      background: var(--bg);
       min-width: 0;
     }
     .chat-header {
       padding: 16px 20px;
-      background: #0f3460;
-      border-bottom: 1px solid #2a2a4a;
+      background: var(--header-bg);
+      border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
       gap: 12px;
       flex-wrap: wrap;
     }
-    .menu-toggle {
-      background: none;
-      border: none;
-      color: #fff;
-      font-size: 1.4rem;
-      cursor: pointer;
-      display: none;
-    }
+    .menu-toggle { background: none; border: none; color: var(--text); font-size: 1.4rem; cursor: pointer; display: none; }
     #current-chat-title {
       font-weight: 600;
       cursor: pointer;
       border-bottom: 1px dashed transparent;
       transition: border-color 0.2s;
       outline: none;
+      color: var(--text);
     }
     #current-chat-title:hover { border-bottom-color: #aaa; }
-    #current-chat-title[contenteditable="true"] {
-      background: #16213e;
-      padding: 2px 8px;
-      border-radius: 4px;
-      border-bottom: none;
-    }
-    .model-selector {
-      margin-left: auto;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
+    #current-chat-title[contenteditable="true"] { background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 4px; border-bottom: none; }
+    .header-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }
     .model-selector select {
       padding: 6px 10px;
-      background: #1a1a2e;
-      color: #fff;
-      border: 1px solid #2a2a4a;
+      background: var(--input-bg);
+      color: var(--text);
+      border: 1px solid var(--border);
       border-radius: 6px;
       font-size: 0.85rem;
-      outline: none;
     }
+    .theme-toggle {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 50%;
+      color: var(--text);
+    }
+    .theme-toggle:hover { background: rgba(255,255,255,0.1); }
 
-    .chat-messages {
-      flex: 1;
-      overflow-y: auto;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
+    .chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
     .message {
       max-width: 80%;
       padding: 10px 16px;
@@ -177,33 +149,16 @@
       word-wrap: break-word;
       white-space: pre-wrap;
       position: relative;
+      color: var(--text);
     }
-    .user-message {
-      align-self: flex-end;
-      background: #0f3460;
-      color: #fff;
-      border-bottom-right-radius: 4px;
-    }
-    .bot-message {
-      align-self: flex-start;
-      background: #2a2a4a;
-      color: #e0e0e0;
-      border-bottom-left-radius: 4px;
-    }
-    .message-actions {
-      display: flex;
-      gap: 6px;
-      margin-top: 6px;
-      opacity: 0;
-      transition: opacity 0.2s;
-    }
-    .bot-message:hover .message-actions {
-      opacity: 1;
-    }
+    .user-message { align-self: flex-end; background: var(--msg-user); border-bottom-right-radius: 4px; }
+    .bot-message { align-self: flex-start; background: var(--msg-bot); border-bottom-left-radius: 4px; }
+    .message-actions { display: flex; gap: 6px; margin-top: 6px; opacity: 0; transition: opacity 0.2s; }
+    .bot-message:hover .message-actions { opacity: 1; }
     .action-btn {
-      background: rgba(255,255,255,0.1);
+      background: rgba(128,128,128,0.2);
       border: none;
-      color: #fff;
+      color: var(--text);
       padding: 3px 8px;
       border-radius: 4px;
       font-size: 0.8rem;
@@ -212,9 +167,9 @@
       align-items: center;
       gap: 4px;
     }
-    .action-btn:hover { background: rgba(255,255,255,0.2); }
+    .action-btn:hover { background: rgba(128,128,128,0.4); }
     .code-block {
-      background: #0d1117;
+      background: var(--code-bg);
       padding: 12px;
       border-radius: 6px;
       font-family: 'Cascadia Code', 'Fira Code', monospace;
@@ -222,74 +177,73 @@
       overflow-x: auto;
       margin: 8px 0;
       white-space: pre;
+      color: var(--text);
     }
-
+    .file-attachment {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+    .file-attachment img { max-width: 200px; max-height: 150px; border-radius: 4px; }
     .input-area {
       display: flex;
       padding: 12px;
-      border-top: 1px solid #2a2a4a;
-      background: #0f3460;
+      border-top: 1px solid var(--border);
+      background: var(--header-bg);
+      gap: 8px;
     }
     #user-input {
       flex: 1;
       padding: 10px 16px;
       border: none;
       border-radius: 8px;
-      background: #1a1a2e;
-      color: #fff;
+      background: var(--input-bg);
+      color: var(--text);
       font-size: 1rem;
       outline: none;
     }
-    #send-button {
-      margin-left: 8px;
-      padding: 10px 20px;
-      background: #e94560;
+    #send-button, #file-upload-btn {
+      background: var(--accent);
       border: none;
       border-radius: 8px;
       color: #fff;
       font-weight: 600;
       cursor: pointer;
       transition: background 0.2s;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-    #send-button:hover { background: #c23152; }
-    #send-button:disabled {
-      background: #555;
-      cursor: not-allowed;
-    }
-    .error-message {
-      color: #e94560;
-      text-align: center;
-      padding: 8px;
-      font-size: 0.9rem;
-    }
+    #send-button:hover, #file-upload-btn:hover { filter: brightness(1.1); }
+    #send-button:disabled { background: #555; cursor: not-allowed; }
+    #file-input { display: none; }
+    .error-message { color: var(--accent); text-align: center; padding: 8px; font-size: 0.9rem; }
 
-    /* OVERLAY */
     .overlay {
       display: none;
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
       background: rgba(0,0,0,0.5);
       z-index: 9;
     }
 
     @media (max-width: 768px) {
       .sidebar {
-        position: fixed;
-        left: 0;
-        top: 0;
-        bottom: 0;
+        position: fixed; left: 0; top: 0; bottom: 0;
         transform: translateX(-100%);
-        width: 280px;
-        z-index: 20;
+        width: 280px; z-index: 20;
         transition: transform 0.3s ease;
       }
       .sidebar.open { transform: translateX(0); }
       .overlay.open { display: block; }
       .menu-toggle { display: block; }
-      .model-selector { display: none; } /* hide on small screens to save space */
+      .model-selector { display: none; }
     }
   </style>
 </head>
@@ -306,26 +260,30 @@
       <div class="chat-list" id="chat-list"></div>
     </div>
 
-    <!-- OVERLAY -->
     <div class="overlay" id="overlay"></div>
 
-    <!-- MAIN CHAT -->
+    <!-- MAIN -->
     <div class="main">
       <div class="chat-header">
         <button class="menu-toggle" id="menu-toggle">☰</button>
         <span id="current-chat-title" title="Click to rename">New Chat</span>
-        <div class="model-selector">
-          <label for="model-select">Model:</label>
-          <select id="model-select">
-            <option value="llama-3.1-8b-instant">Llama 3.1 8B (fast)</option>
-            <option value="gemma2-9b-it">Gemma 2 9B</option>
-            <option value="llama-3.2-3b-preview">Llama 3.2 3B (preview)</option>
-          </select>
+        <div class="header-actions">
+          <div class="model-selector">
+            <select id="model-select">
+              <option value="llama-3.1-8b-instant">Llama 3.1 8B</option>
+              <option value="gemma2-9b-it">Gemma 2 9B</option>
+              <option value="llama-3.2-3b-preview">Llama 3.2 3B</option>
+              <option value="llama-3.2-11b-vision-preview">Llama 3.2 Vision (images)</option>
+            </select>
+          </div>
+          <button class="theme-toggle" id="theme-toggle" title="Toggle theme">🌙</button>
         </div>
       </div>
       <div class="chat-messages" id="chat-messages"></div>
       <div class="input-area">
         <input type="text" id="user-input" placeholder="Ask anything..." autofocus>
+        <button id="file-upload-btn" title="Upload image or text file">📎</button>
+        <input type="file" id="file-input" accept="image/*,.txt,.md,.csv">
         <button id="send-button">Send</button>
       </div>
     </div>
@@ -333,8 +291,9 @@
 
   <script>
     // ====================== CONFIGURATION ======================
-    const API_KEY = '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';
-    const API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+    const BACKEND_URL = 'http://localhost:3000/api/chat';  // the proxy
+    let currentModel = localStorage.getItem('ebubz_model') || 'llama-3.1-8b-instant';
+    let attachedFile = null;  // { type: 'image', base64: ..., name: ... } or null
 
     // ====================== DOM ELEMENTS ======================
     const sidebar = document.getElementById('sidebar');
@@ -348,25 +307,77 @@
     const sendButton = document.getElementById('send-button');
     const currentChatTitle = document.getElementById('current-chat-title');
     const modelSelect = document.getElementById('model-select');
+    const themeToggle = document.getElementById('theme-toggle');
+    const fileUploadBtn = document.getElementById('file-upload-btn');
+    const fileInput = document.getElementById('file-input');
 
     // ====================== STATE ======================
     let chats = {};
     let currentChatId = null;
-    let currentModel = localStorage.getItem('ebubz_model') || 'llama-3.1-8b-instant';
 
     // ====================== LOCAL STORAGE ======================
-    function saveChats() {
-      localStorage.setItem('ebubz_chats', JSON.stringify(chats));
-    }
-    function loadChats() {
-      const stored = localStorage.getItem('ebubz_chats');
-      chats = stored ? JSON.parse(stored) : {};
-    }
-    function saveModel() {
-      localStorage.setItem('ebubz_model', currentModel);
+    function saveChats() { localStorage.setItem('ebubz_chats', JSON.stringify(chats)); }
+    function loadChats() { const s = localStorage.getItem('ebubz_chats'); chats = s ? JSON.parse(s) : {}; }
+    function saveModel() { localStorage.setItem('ebubz_model', currentModel); }
+
+    // ====================== THEME ======================
+    const themeSaved = localStorage.getItem('ebubz_theme') || 'dark';
+    document.body.classList.toggle('light', themeSaved === 'light');
+    themeToggle.textContent = themeSaved === 'light' ? '☀️' : '🌙';
+    themeToggle.addEventListener('click', () => {
+      const isLight = document.body.classList.toggle('light');
+      localStorage.setItem('ebubz_theme', isLight ? 'light' : 'dark');
+      themeToggle.textContent = isLight ? '☀️' : '🌙';
+    });
+
+    // ====================== FILE HANDLING ======================
+    fileUploadBtn.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          attachedFile = { type: 'image', base64: reader.result.split(',')[1], name: file.name };
+          // Auto-switch to vision model
+          modelSelect.value = 'llama-3.2-11b-vision-preview';
+          currentModel = 'llama-3.2-11b-vision-preview';
+          saveModel();
+          showAttachmentPreview();
+        };
+        reader.readAsDataURL(file);
+      } else {
+        // text file
+        const text = await file.text();
+        userInput.value = text;
+        attachedFile = null;
+        fileInput.value = '';
+        userInput.focus();
+      }
+    });
+
+    function showAttachmentPreview() {
+      // Remove any existing preview
+      const old = document.querySelector('.file-attachment');
+      if (old) old.remove();
+      if (!attachedFile) return;
+      const div = document.createElement('div');
+      div.className = 'file-attachment';
+      div.innerHTML = `
+        <img src="data:image/png;base64,${attachedFile.base64}" alt="Attachment">
+        <span>${attachedFile.name}</span>
+        <button class="action-btn" id="remove-attachment">✖</button>
+      `;
+      messagesContainer.appendChild(div);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      document.getElementById('remove-attachment').addEventListener('click', () => {
+        attachedFile = null;
+        div.remove();
+        fileInput.value = '';
+      });
     }
 
-    // ====================== SIDEBAR RENDERING ======================
+    // ====================== SIDEBAR ======================
     function renderChatList() {
       chatListEl.innerHTML = '';
       const ids = Object.keys(chats).sort((a, b) => (chats[b].timestamp || 0) - (chats[a].timestamp || 0));
@@ -374,34 +385,17 @@
         const chat = chats[id];
         const div = document.createElement('div');
         div.className = 'chat-item' + (id === currentChatId ? ' active' : '');
-        div.innerHTML = `
-          <span class="title">${escapeHtml(chat.title || 'New Chat')}</span>
-          <button class="delete-btn" data-id="${id}">🗑️</button>
-        `;
+        div.innerHTML = `<span class="title">${escapeHtml(chat.title || 'New Chat')}</span><button class="delete-btn" data-id="${id}">🗑️</button>`;
         div.querySelector('.title').addEventListener('click', () => switchChat(id));
-        div.querySelector('.delete-btn').addEventListener('click', (e) => {
-          e.stopPropagation();
-          deleteChat(id);
-        });
+        div.querySelector('.delete-btn').addEventListener('click', (e) => { e.stopPropagation(); deleteChat(id); });
         chatListEl.appendChild(div);
       });
     }
 
-    function switchChat(id) {
-      currentChatId = id;
-      renderMessages();
-      renderChatList();
-      updateHeaderTitle();
-      closeSidebar();
-    }
-
+    function switchChat(id) { currentChatId = id; renderMessages(); renderChatList(); updateHeaderTitle(); closeSidebar(); }
     function newChat() {
       const id = Date.now().toString();
-      chats[id] = {
-        title: 'New Chat',
-        messages: [],
-        timestamp: Date.now()
-      };
+      chats[id] = { title: 'New Chat', messages: [], timestamp: Date.now() };
       currentChatId = id;
       saveChats();
       renderMessages();
@@ -410,29 +404,22 @@
       closeSidebar();
       userInput.focus();
     }
-
     function deleteChat(id) {
       if (confirm('Delete this conversation?')) {
         delete chats[id];
         saveChats();
         if (currentChatId === id) {
           const remaining = Object.keys(chats);
-          if (remaining.length > 0) {
-            currentChatId = remaining[remaining.length - 1];
-          } else {
-            newChat();
-            return;
-          }
+          currentChatId = remaining.length > 0 ? remaining[remaining.length - 1] : null;
+          if (!currentChatId) newChat();
         }
         renderMessages();
         renderChatList();
         updateHeaderTitle();
       }
     }
-
     function clearAllChats() {
-      if (Object.keys(chats).length === 0) return;
-      if (confirm('Delete ALL conversations? This cannot be undone.')) {
+      if (Object.keys(chats).length && confirm('Delete ALL conversations?')) {
         chats = {};
         saveChats();
         newChat();
@@ -444,61 +431,44 @@
       messagesContainer.innerHTML = '';
       if (!currentChatId || !chats[currentChatId]) return;
       const msgs = chats[currentChatId].messages;
-      msgs.forEach((msg, index) => {
-        addMessageElement(msg.text, msg.sender, index);
+      msgs.forEach((msg, idx) => {
+        addMessageElement(msg.text, msg.sender, idx, msg.attachment);
       });
-      // If last message is from bot, add action buttons
-      if (msgs.length > 0 && msgs[msgs.length - 1].sender === 'bot') {
-        addActionButtonsToLastBotMessage();
-      }
+      if (msgs.length && msgs[msgs.length-1].sender === 'bot') addActionButtonsToLastBotMessage();
     }
 
-    function addMessageElement(text, sender, index = null) {
-      const msgDiv = document.createElement('div');
-      msgDiv.className = 'message ' + (sender === 'user' ? 'user-message' : 'bot-message');
-      // Process code blocks
-      const formatted = formatMessageText(text);
-      msgDiv.innerHTML = formatted;
+    function addMessageElement(text, sender, index = null, attachment = null) {
+      const div = document.createElement('div');
+      div.className = `message ${sender}-message`;
+      let content = formatMessageText(text);
+      if (attachment) content = `<div class="file-attachment"><img src="data:image/png;base64,${attachment.base64}" style="max-width:200px;max-height:150px;"></div>` + content;
+      div.innerHTML = content;
       if (sender === 'bot') {
-        // Add copy button
-        const actionsDiv = document.createElement('div');
-        actionsDiv.className = 'message-actions';
+        const actions = document.createElement('div');
+        actions.className = 'message-actions';
         const copyBtn = document.createElement('button');
-        copyBtn.className = 'action-btn';
-        copyBtn.innerHTML = '📋 Copy';
-        copyBtn.addEventListener('click', () => {
-          navigator.clipboard.writeText(text);
-          copyBtn.innerHTML = '✅ Copied';
-          setTimeout(() => { copyBtn.innerHTML = '📋 Copy'; }, 2000);
-        });
-        actionsDiv.appendChild(copyBtn);
-        // If it's the last bot message, we'll add regenerate button later
-        msgDiv.appendChild(actionsDiv);
+        copyBtn.className = 'action-btn'; copyBtn.textContent = '📋 Copy';
+        copyBtn.addEventListener('click', () => { navigator.clipboard.writeText(text); copyBtn.textContent = '✅ Copied'; setTimeout(() => copyBtn.textContent = '📋 Copy', 2000); });
+        actions.appendChild(copyBtn);
+        div.appendChild(actions);
       }
-      messagesContainer.appendChild(msgDiv);
+      messagesContainer.appendChild(div);
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
     function addActionButtonsToLastBotMessage() {
-      const lastMsg = messagesContainer.querySelector('.bot-message:last-child');
-      if (!lastMsg) return;
-      const actionsDiv = lastMsg.querySelector('.message-actions');
-      if (!actionsDiv) return;
-      // Check if regenerate button already exists
-      if (!actionsDiv.querySelector('.regenerate-btn')) {
-        const regenBtn = document.createElement('button');
-        regenBtn.className = 'action-btn regenerate-btn';
-        regenBtn.innerHTML = '🔄 Regenerate';
-        regenBtn.addEventListener('click', regenerateLastResponse);
-        actionsDiv.appendChild(regenBtn);
-      }
+      const last = messagesContainer.querySelector('.bot-message:last-child');
+      if (!last) return;
+      const actions = last.querySelector('.message-actions');
+      if (!actions || actions.querySelector('.regenerate-btn')) return;
+      const regenBtn = document.createElement('button');
+      regenBtn.className = 'action-btn regenerate-btn'; regenBtn.textContent = '🔄 Regenerate';
+      regenBtn.addEventListener('click', regenerateLastResponse);
+      actions.appendChild(regenBtn);
     }
 
     function formatMessageText(text) {
-      // Replace code blocks (``` ... ```) with styled blocks
-      return text.replace(/```(\w*)\n?([\s\S]*?)```/g, (match, lang, code) => {
-        return `<div class="code-block">${escapeHtml(code.trim())}</div>`;
-      });
+      return text.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => `<div class="code-block">${escapeHtml(code.trim())}</div>`);
     }
 
     function addError(text) {
@@ -506,79 +476,57 @@
       errDiv.className = 'error-message';
       errDiv.textContent = '❌ ' + text;
       messagesContainer.appendChild(errDiv);
-      messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
     function updateHeaderTitle() {
-      if (currentChatId && chats[currentChatId]) {
-        currentChatTitle.textContent = chats[currentChatId].title || 'New Chat';
-      } else {
-        currentChatTitle.textContent = 'New Chat';
-      }
+      currentChatTitle.textContent = currentChatId && chats[currentChatId] ? (chats[currentChatId].title || 'New Chat') : 'New Chat';
     }
 
-    // Auto-title from first user message
-    function autoTitle(chatId, message) {
-      if (chats[chatId] && chats[chatId].title === 'New Chat') {
-        chats[chatId].title = message.length > 30 ? message.substring(0, 30) + '...' : message;
-        saveChats();
-        renderChatList();
-        updateHeaderTitle();
+    function autoTitle(chatId, msg) {
+      if (chats[chatId]?.title === 'New Chat') {
+        chats[chatId].title = msg.length > 30 ? msg.substring(0,30)+'...' : msg;
+        saveChats(); renderChatList(); updateHeaderTitle();
       }
     }
 
     // ====================== RENAME CHAT ======================
     currentChatTitle.addEventListener('click', () => {
       if (!currentChatId || !chats[currentChatId]) return;
-      const oldTitle = chats[currentChatId].title;
       currentChatTitle.contentEditable = 'true';
       currentChatTitle.focus();
-      // Select all text
-      const range = document.createRange();
-      range.selectNodeContents(currentChatTitle);
-      const sel = window.getSelection();
-      sel.removeAllRanges();
-      sel.addRange(range);
-
-      const saveRename = () => {
+      const range = document.createRange(); range.selectNodeContents(currentChatTitle);
+      const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+      const save = () => {
         currentChatTitle.contentEditable = 'false';
-        const newTitle = currentChatTitle.textContent.trim() || 'New Chat';
-        chats[currentChatId].title = newTitle;
-        saveChats();
-        renderChatList();
-        updateHeaderTitle();
-        currentChatTitle.removeEventListener('blur', saveRename);
+        chats[currentChatId].title = currentChatTitle.textContent.trim() || 'New Chat';
+        saveChats(); renderChatList(); updateHeaderTitle();
+        currentChatTitle.removeEventListener('blur', save);
         currentChatTitle.removeEventListener('keydown', onEnter);
       };
-
-      const onEnter = (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          saveRename();
-        }
-      };
-
-      currentChatTitle.addEventListener('blur', saveRename);
+      const onEnter = (e) => { if (e.key === 'Enter') { e.preventDefault(); save(); } };
+      currentChatTitle.addEventListener('blur', save);
       currentChatTitle.addEventListener('keydown', onEnter);
     });
 
-    // ====================== API CALL ======================
+    // ====================== STREAMING API CALL ======================
     async function sendMessage(userMessage, isRegenerate = false) {
       if (!currentChatId) newChat();
 
+      const attachment = attachedFile ? { base64: attachedFile.base64, name: attachedFile.name } : null;
+
       if (!isRegenerate) {
-        // Save user message
-        chats[currentChatId].messages.push({ text: userMessage, sender: 'user' });
+        chats[currentChatId].messages.push({ text: userMessage, sender: 'user', attachment });
         chats[currentChatId].timestamp = Date.now();
         saveChats();
         renderMessages();
         autoTitle(currentChatId, userMessage);
+        attachedFile = null;
+        fileInput.value = '';
+        const preview = document.querySelector('.file-attachment');
+        if (preview) preview.remove();
       } else {
-        // Remove the last bot message before regenerating
         const msgs = chats[currentChatId].messages;
-        if (msgs.length > 0 && msgs[msgs.length - 1].sender === 'bot') {
-          msgs.pop();
-        }
+        if (msgs.length && msgs[msgs.length-1].sender === 'bot') msgs.pop();
         saveChats();
         renderMessages();
       }
@@ -586,45 +534,99 @@
       userInput.disabled = true;
       sendButton.disabled = true;
 
-      const recentMessages = chats[currentChatId].messages.slice(-10).map(m => ({
+      // Build messages for API
+      const recent = chats[currentChatId].messages.slice(-10).map(m => ({
         role: m.sender === 'user' ? 'user' : 'assistant',
         content: m.text
       }));
 
-      const systemMsg = { role: 'system', content: 'You are EbubZ AI, a helpful assistant created by Ebube Arinze.' };
-      const apiMessages = [systemMsg, ...recentMessages];
+      // Prepend system prompt
+      const systemMsg = { role: 'system', content: 'You are EbubZ AI, created by Ebube Arinze. Be helpful and concise.' };
+      const apiMessages = [systemMsg, ...recent];
+
+      // Add image if last user message had attachment and model supports vision
+      if (attachment && currentModel.includes('vision')) {
+        const lastUserMsg = apiMessages[apiMessages.length-1];
+        if (lastUserMsg?.role === 'user') {
+          lastUserMsg.content = [
+            { type: 'text', text: lastUserMsg.content },
+            { type: 'image_url', image_url: { url: `data:image/png;base64,${attachment.base64}` } }
+          ];
+        }
+      }
 
       try {
-        const response = await fetch(API_URL, {
+        // Create a temporary bot message for streaming
+        const botDiv = document.createElement('div');
+        botDiv.className = 'message bot-message';
+        botDiv.textContent = '⏳ Thinking...';
+        messagesContainer.appendChild(botDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+        const response = await fetch(BACKEND_URL, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${API_KEY}`
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             model: currentModel,
             messages: apiMessages,
+            stream: true,
             temperature: 0.7,
             max_tokens: 2000
           })
         });
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error?.message || `HTTP ${response.status}`);
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.error || `HTTP ${response.status}`);
         }
 
-        const data = await response.json();
-        const botReply = data.choices[0].message.content;
+        // Read the stream
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let fullText = '';
 
-        chats[currentChatId].messages.push({ text: botReply, sender: 'bot' });
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n').filter(l => l.startsWith('data: '));
+          for (const line of lines) {
+            const dataStr = line.replace('data: ', '').trim();
+            if (dataStr === '[DONE]') continue;
+            try {
+              const json = JSON.parse(dataStr);
+              const content = json.choices[0]?.delta?.content || '';
+              fullText += content;
+              botDiv.textContent = fullText || '...';
+              messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            } catch (e) {}
+          }
+        }
+
+        // Final save
+        botDiv.textContent = fullText;
+        chats[currentChatId].messages.push({ text: fullText, sender: 'bot' });
         chats[currentChatId].timestamp = Date.now();
         saveChats();
-        renderMessages();
+        // Add action buttons
+        const actions = document.createElement('div');
+        actions.className = 'message-actions';
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'action-btn'; copyBtn.textContent = '📋 Copy';
+        copyBtn.addEventListener('click', () => { navigator.clipboard.writeText(fullText); copyBtn.textContent = '✅ Copied'; setTimeout(() => copyBtn.textContent = '📋 Copy', 2000); });
+        const regenBtn = document.createElement('button');
+        regenBtn.className = 'action-btn regenerate-btn'; regenBtn.textContent = '🔄 Regenerate';
+        regenBtn.addEventListener('click', regenerateLastResponse);
+        actions.appendChild(copyBtn);
+        actions.appendChild(regenBtn);
+        botDiv.appendChild(actions);
 
       } catch (error) {
-        console.error('API Error:', error);
-        addError(error.message || 'Failed to get reply.');
+        console.error(error);
+        addError(error.message || 'Failed to get reply');
+        // Remove temporary bot message
+        const temp = messagesContainer.querySelector('.bot-message:last-child');
+        if (temp && temp.textContent === '⏳ Thinking...') temp.remove();
       } finally {
         userInput.disabled = false;
         sendButton.disabled = false;
@@ -635,51 +637,35 @@
     function regenerateLastResponse() {
       if (!currentChatId || !chats[currentChatId]) return;
       const msgs = chats[currentChatId].messages;
-      if (msgs.length === 0 || msgs[msgs.length - 1].sender !== 'bot') return;
-      // We resend the last user message (which is second-to-last)
-      const lastUserMsg = msgs[msgs.length - 2];
-      if (!lastUserMsg || lastUserMsg.sender !== 'user') return;
-      sendMessage(lastUserMsg.text, true);
+      if (msgs.length < 2) return;
+      const lastUser = msgs[msgs.length-2];
+      if (lastUser?.sender !== 'user') return;
+      sendMessage(lastUser.text, true);
     }
 
     // ====================== SIDEBAR TOGGLE ======================
-    function openSidebar() {
-      sidebar.classList.add('open');
-      overlay.classList.add('open');
-    }
-    function closeSidebar() {
-      sidebar.classList.remove('open');
-      overlay.classList.remove('open');
-    }
+    function openSidebar() { sidebar.classList.add('open'); overlay.classList.add('open'); }
+    function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.remove('open'); }
 
     // ====================== EVENT LISTENERS ======================
     menuToggle.addEventListener('click', openSidebar);
     overlay.addEventListener('click', closeSidebar);
     newChatBtn.addEventListener('click', newChat);
     clearAllBtn.addEventListener('click', clearAllChats);
-
     modelSelect.value = currentModel;
-    modelSelect.addEventListener('change', (e) => {
-      currentModel = e.target.value;
-      saveModel();
-    });
+    modelSelect.addEventListener('change', (e) => { currentModel = e.target.value; saveModel(); });
 
     sendButton.addEventListener('click', () => {
       const text = userInput.value.trim();
-      if (text) {
-        sendMessage(text);
+      if (text || attachedFile) {
+        sendMessage(text || 'Describe this image.');
         userInput.value = '';
       }
     });
-
     userInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        const text = userInput.value.trim();
-        if (text) {
-          sendMessage(text);
-          userInput.value = '';
-        }
+        sendButton.click();
       }
     });
 
@@ -691,8 +677,9 @@
     // ====================== INIT ======================
     function init() {
       loadChats();
-      if (Object.keys(chats).length > 0) {
-        currentChatId = Object.keys(chats).sort((a, b) => (chats[b].timestamp || 0) - (chats[a].timestamp || 0))[0];
+      const ids = Object.keys(chats);
+      if (ids.length) {
+        currentChatId = ids.sort((a,b) => (chats[b].timestamp||0)-(chats[a].timestamp||0))[0];
       } else {
         newChat();
         return;
@@ -701,7 +688,6 @@
       renderChatList();
       updateHeaderTitle();
     }
-
     init();
   </script>
 </body>
