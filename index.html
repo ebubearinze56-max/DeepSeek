@@ -291,9 +291,9 @@
 
   <script>
     // ====================== CONFIGURATION ======================
-    const BACKEND_URL = 'http://localhost:3000/api/chat';  // the proxy
+    const BACKEND_URL = '/.netlify/functions/chat';   // Netlify function endpoint
     let currentModel = localStorage.getItem('ebubz_model') || 'llama-3.1-8b-instant';
-    let attachedFile = null;  // { type: 'image', base64: ..., name: ... } or null
+    let attachedFile = null;
 
     // ====================== DOM ELEMENTS ======================
     const sidebar = document.getElementById('sidebar');
@@ -339,7 +339,6 @@
         const reader = new FileReader();
         reader.onload = () => {
           attachedFile = { type: 'image', base64: reader.result.split(',')[1], name: file.name };
-          // Auto-switch to vision model
           modelSelect.value = 'llama-3.2-11b-vision-preview';
           currentModel = 'llama-3.2-11b-vision-preview';
           saveModel();
@@ -347,7 +346,6 @@
         };
         reader.readAsDataURL(file);
       } else {
-        // text file
         const text = await file.text();
         userInput.value = text;
         attachedFile = null;
@@ -357,7 +355,6 @@
     });
 
     function showAttachmentPreview() {
-      // Remove any existing preview
       const old = document.querySelector('.file-attachment');
       if (old) old.remove();
       if (!attachedFile) return;
@@ -508,7 +505,7 @@
       currentChatTitle.addEventListener('keydown', onEnter);
     });
 
-    // ====================== STREAMING API CALL ======================
+    // ====================== API CALL (Netlify compatible) ======================
     async function sendMessage(userMessage, isRegenerate = false) {
       if (!currentChatId) newChat();
 
@@ -534,17 +531,14 @@
       userInput.disabled = true;
       sendButton.disabled = true;
 
-      // Build messages for API
       const recent = chats[currentChatId].messages.slice(-10).map(m => ({
         role: m.sender === 'user' ? 'user' : 'assistant',
         content: m.text
       }));
 
-      // Prepend system prompt
       const systemMsg = { role: 'system', content: 'You are EbubZ AI, created by Ebube Arinze. Be helpful and concise.' };
       const apiMessages = [systemMsg, ...recent];
 
-      // Add image if last user message had attachment and model supports vision
       if (attachment && currentModel.includes('vision')) {
         const lastUserMsg = apiMessages[apiMessages.length-1];
         if (lastUserMsg?.role === 'user') {
@@ -555,21 +549,16 @@
         }
       }
 
-      try {
-        // Create a temporary bot message for streaming
-        const botDiv = document.createElement('div');
-        botDiv.className = 'message bot-message';
-        botDiv.textContent = '⏳ Thinking...';
-        messagesContainer.appendChild(botDiv);
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      addMessageElement('⏳ Thinking...', 'bot');
+      const thinkingMsg = messagesContainer.lastChild;
 
+      try {
         const response = await fetch(BACKEND_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             model: currentModel,
             messages: apiMessages,
-            stream: true,
             temperature: 0.7,
             max_tokens: 2000
           })
@@ -580,53 +569,20 @@
           throw new Error(errData.error || `HTTP ${response.status}`);
         }
 
-        // Read the stream
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let fullText = '';
+        const data = await response.json();
+        const botReply = data.choices[0].message.content;
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split('\n').filter(l => l.startsWith('data: '));
-          for (const line of lines) {
-            const dataStr = line.replace('data: ', '').trim();
-            if (dataStr === '[DONE]') continue;
-            try {
-              const json = JSON.parse(dataStr);
-              const content = json.choices[0]?.delta?.content || '';
-              fullText += content;
-              botDiv.textContent = fullText || '...';
-              messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            } catch (e) {}
-          }
-        }
-
-        // Final save
-        botDiv.textContent = fullText;
-        chats[currentChatId].messages.push({ text: fullText, sender: 'bot' });
+        thinkingMsg.remove();
+        addMessageElement(botReply, 'bot');
+        chats[currentChatId].messages.push({ text: botReply, sender: 'bot' });
         chats[currentChatId].timestamp = Date.now();
         saveChats();
-        // Add action buttons
-        const actions = document.createElement('div');
-        actions.className = 'message-actions';
-        const copyBtn = document.createElement('button');
-        copyBtn.className = 'action-btn'; copyBtn.textContent = '📋 Copy';
-        copyBtn.addEventListener('click', () => { navigator.clipboard.writeText(fullText); copyBtn.textContent = '✅ Copied'; setTimeout(() => copyBtn.textContent = '📋 Copy', 2000); });
-        const regenBtn = document.createElement('button');
-        regenBtn.className = 'action-btn regenerate-btn'; regenBtn.textContent = '🔄 Regenerate';
-        regenBtn.addEventListener('click', regenerateLastResponse);
-        actions.appendChild(copyBtn);
-        actions.appendChild(regenBtn);
-        botDiv.appendChild(actions);
+        addActionButtonsToLastBotMessage();
 
       } catch (error) {
         console.error(error);
+        thinkingMsg.remove();
         addError(error.message || 'Failed to get reply');
-        // Remove temporary bot message
-        const temp = messagesContainer.querySelector('.bot-message:last-child');
-        if (temp && temp.textContent === '⏳ Thinking...') temp.remove();
       } finally {
         userInput.disabled = false;
         sendButton.disabled = false;
