@@ -22,7 +22,7 @@ export default async function handler(req, res) {
         messages,
         temperature: temperature || 0.7,
         max_tokens: max_tokens || 2000,
-        stream: false, // Vercel functions can't easily stream
+        stream: false,
       }),
     });
 
