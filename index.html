@@ -2,43 +2,132 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
   <title>EbubZ AI</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+
     body {
       background: #1a1a2e;
       color: #e0e0e0;
       font-family: 'Segoe UI', system-ui, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
       height: 100vh;
+      overflow: hidden;
     }
-    .chat-container {
+
+    /* ===== LAYOUT ===== */
+    .app {
+      display: flex;
+      height: 100vh;
       width: 100%;
-      max-width: 700px;
-      height: 90vh;
+    }
+
+    /* ===== SIDEBAR ===== */
+    .sidebar {
+      width: 280px;
       background: #16213e;
-      border-radius: 12px;
-      box-shadow: 0 4px 30px rgba(0,0,0,0.5);
+      border-right: 1px solid #2a2a4a;
       display: flex;
       flex-direction: column;
+      transition: transform 0.3s ease;
+      position: relative;
+      z-index: 10;
+    }
+    .sidebar-header {
+      padding: 16px;
+      border-bottom: 1px solid #2a2a4a;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .sidebar-header h1 {
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+    .sidebar-header .creator {
+      font-size: 0.7rem;
+      opacity: 0.6;
+    }
+    .new-chat-btn {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      background: #e94560;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-top: 8px;
+    }
+    .new-chat-btn:hover { background: #c23152; }
+
+    .chat-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+    .chat-item {
+      padding: 10px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+      word-break: break-word;
+    }
+    .chat-item:hover {
+      background: #2a2a5a;
+    }
+    .chat-item.active {
+      background: #0f3460;
+    }
+    .chat-item .title {
+      flex: 1;
+      font-size: 0.9rem;
+      white-space: nowrap;
       overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .chat-item .delete-btn {
+      background: none;
+      border: none;
+      color: #e94560;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-left: 8px;
+      opacity: 0.6;
+      transition: opacity 0.2s;
+    }
+    .chat-item .delete-btn:hover { opacity: 1; }
+
+    /* ===== MAIN CHAT AREA ===== */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #1a1a2e;
+      min-width: 0;
     }
     .chat-header {
       padding: 16px 20px;
       background: #0f3460;
       border-bottom: 1px solid #2a2a4a;
-    }
-    .chat-header h1 {
-      font-size: 1.3rem;
+      font-size: 1rem;
       font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
-    .chat-header .creator {
-      font-size: 0.75rem;
-      opacity: 0.7;
-      margin-top: 2px;
+    .menu-toggle {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 1.4rem;
+      cursor: pointer;
+      display: none; /* hidden on desktop */
     }
     .chat-messages {
       flex: 1;
@@ -54,6 +143,7 @@
       border-radius: 12px;
       line-height: 1.5;
       word-wrap: break-word;
+      white-space: pre-wrap;
     }
     .user-message {
       align-self: flex-end;
@@ -63,7 +153,7 @@
     }
     .bot-message {
       align-self: flex-start;
-      background: #1a1a2e;
+      background: #2a2a4a;
       color: #e0e0e0;
       border-bottom-left-radius: 4px;
     }
@@ -103,34 +193,189 @@
       color: #e94560;
       text-align: center;
       padding: 8px;
+      font-size: 0.9rem;
+    }
+
+    /* ===== OVERLAY (for mobile sidebar) ===== */
+    .overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 9;
+    }
+
+    /* ===== RESPONSIVE RULES ===== */
+    @media (max-width: 768px) {
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        transform: translateX(-100%);
+        width: 280px;
+        z-index: 20;
+        transition: transform 0.3s ease;
+      }
+      .sidebar.open {
+        transform: translateX(0);
+      }
+      .overlay.open {
+        display: block;
+      }
+      .menu-toggle {
+        display: block;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="chat-container">
-    <div class="chat-header">
-      <h1>🤖 EbubZ AI</h1>
-      <div class="creator">by Ebube Arinze</div>
+  <div class="app">
+    <!-- SIDEBAR -->
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <h1>🤖 EbubZ AI</h1>
+        <div class="creator">by Ebube Arinze</div>
+        <button class="new-chat-btn" id="new-chat-btn">＋ New Chat</button>
+      </div>
+      <div class="chat-list" id="chat-list"></div>
     </div>
-    <div class="chat-messages" id="chat-messages"></div>
-    <div class="input-area">
-      <input type="text" id="user-input" placeholder="Ask anything..." autofocus>
-      <button id="send-button">Send</button>
+
+    <!-- OVERLAY (mobile) -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- MAIN CHAT -->
+    <div class="main">
+      <div class="chat-header">
+        <button class="menu-toggle" id="menu-toggle">☰</button>
+        <span id="current-chat-title">New Chat</span>
+      </div>
+      <div class="chat-messages" id="chat-messages"></div>
+      <div class="input-area">
+        <input type="text" id="user-input" placeholder="Ask anything..." autofocus>
+        <button id="send-button">Send</button>
+      </div>
     </div>
   </div>
 
   <script>
-    // ====================== CONFIGURATION – GROQ (FREE) ======================
+    // ====================== CONFIGURATION ======================
     const API_KEY = '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';
     const API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-    const MODEL = 'llama-3.1-8b-instant';   // ✅ Updated model (free)
+    const MODEL = 'llama-3.1-8b-instant';
 
     // ====================== DOM ELEMENTS ======================
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+    const menuToggle = document.getElementById('menu-toggle');
+    const chatListEl = document.getElementById('chat-list');
+    const newChatBtn = document.getElementById('new-chat-btn');
     const messagesContainer = document.getElementById('chat-messages');
     const userInput = document.getElementById('user-input');
     const sendButton = document.getElementById('send-button');
+    const currentChatTitle = document.getElementById('current-chat-title');
 
-    function addMessage(text, sender) {
+    // ====================== STATE ======================
+    let chats = {};            // { chatId: { title, messages: [] } }
+    let currentChatId = null;
+
+    // ====================== LOCAL STORAGE HELPERS ======================
+    function saveChatsToStorage() {
+      localStorage.setItem('ebubz_chats', JSON.stringify(chats));
+    }
+
+    function loadChatsFromStorage() {
+      const stored = localStorage.getItem('ebubz_chats');
+      if (stored) {
+        try {
+          chats = JSON.parse(stored);
+        } catch(e) {
+          chats = {};
+        }
+      } else {
+        chats = {};
+      }
+    }
+
+    // ====================== SIDEBAR RENDERING ======================
+    function renderChatList() {
+      chatListEl.innerHTML = '';
+      const chatIds = Object.keys(chats).sort((a, b) => (chats[b].timestamp || 0) - (chats[a].timestamp || 0));
+      chatIds.forEach(id => {
+        const chat = chats[id];
+        const div = document.createElement('div');
+        div.className = 'chat-item' + (id === currentChatId ? ' active' : '');
+        div.innerHTML = `
+          <span class="title">${escapeHtml(chat.title || 'New Chat')}</span>
+          <button class="delete-btn" data-id="${id}">🗑️</button>
+        `;
+        div.querySelector('.title').addEventListener('click', () => switchChat(id));
+        div.querySelector('.delete-btn').addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteChat(id);
+        });
+        chatListEl.appendChild(div);
+      });
+    }
+
+    function switchChat(id) {
+      currentChatId = id;
+      renderMessages();
+      renderChatList();
+      updateHeaderTitle();
+      closeSidebar();
+    }
+
+    function newChat() {
+      const id = Date.now().toString();
+      chats[id] = {
+        title: 'New Chat',
+        messages: [],
+        timestamp: Date.now()
+      };
+      currentChatId = id;
+      saveChatsToStorage();
+      renderMessages();
+      renderChatList();
+      updateHeaderTitle();
+      closeSidebar();
+      userInput.focus();
+    }
+
+    function deleteChat(id) {
+      if (confirm('Delete this conversation?')) {
+        delete chats[id];
+        saveChatsToStorage();
+        if (currentChatId === id) {
+          // Switch to most recent remaining chat or create new one
+          const remainingIds = Object.keys(chats);
+          if (remainingIds.length > 0) {
+            currentChatId = remainingIds[remainingIds.length - 1];
+          } else {
+            currentChatId = null;
+            newChat(); // create new default
+          }
+        }
+        renderMessages();
+        renderChatList();
+        updateHeaderTitle();
+      }
+    }
+
+    // ====================== MESSAGES ======================
+    function renderMessages() {
+      messagesContainer.innerHTML = '';
+      if (!currentChatId || !chats[currentChatId]) return;
+      const msgs = chats[currentChatId].messages;
+      msgs.forEach(msg => {
+        addMessageElement(msg.text, msg.sender);
+      });
+    }
+
+    function addMessageElement(text, sender) {
       const msgDiv = document.createElement('div');
       msgDiv.classList.add('message', sender === 'user' ? 'user-message' : 'bot-message');
       msgDiv.textContent = text;
@@ -146,10 +391,48 @@
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
+    function updateHeaderTitle() {
+      if (currentChatId && chats[currentChatId]) {
+        currentChatTitle.textContent = chats[currentChatId].title || 'New Chat';
+      } else {
+        currentChatTitle.textContent = 'New Chat';
+      }
+    }
+
+    // Update title based on first user message
+    function autoTitle(chatId, message) {
+      if (chats[chatId].title === 'New Chat') {
+        const title = message.length > 30 ? message.substring(0, 30) + '...' : message;
+        chats[chatId].title = title;
+        saveChatsToStorage();
+        renderChatList();
+        updateHeaderTitle();
+      }
+    }
+
+    // ====================== API CALL ======================
     async function sendMessage(userMessage) {
-      addMessage(userMessage, 'user');
+      if (!currentChatId) newChat();
+
+      // Save user message
+      chats[currentChatId].messages.push({ text: userMessage, sender: 'user' });
+      chats[currentChatId].timestamp = Date.now();
+      saveChatsToStorage();
+      renderMessages();
+      autoTitle(currentChatId, userMessage);
+
+      // Update input state
       userInput.disabled = true;
       sendButton.disabled = true;
+
+      // Prepare conversation context (last N messages)
+      const recentMessages = chats[currentChatId].messages.slice(-10).map(m => ({
+        role: m.sender === 'user' ? 'user' : 'assistant',
+        content: m.text
+      }));
+
+      const systemMsg = { role: 'system', content: 'You are EbubZ AI, a helpful assistant created by Ebube Arinze.' };
+      const apiMessages = [systemMsg, ...recentMessages];
 
       try {
         const response = await fetch(API_URL, {
@@ -160,10 +443,7 @@
           },
           body: JSON.stringify({
             model: MODEL,
-            messages: [
-              { role: 'system', content: 'You are EbubZ AI, a helpful assistant created by Ebube Arinze.' },
-              { role: 'user', content: userMessage }
-            ],
+            messages: apiMessages,
             temperature: 0.7,
             max_tokens: 2000
           })
@@ -176,17 +456,38 @@
 
         const data = await response.json();
         const botReply = data.choices[0].message.content;
-        addMessage(botReply, 'bot');
+
+        // Save bot reply
+        chats[currentChatId].messages.push({ text: botReply, sender: 'bot' });
+        chats[currentChatId].timestamp = Date.now();
+        saveChatsToStorage();
+        renderMessages();
 
       } catch (error) {
         console.error('API Error:', error);
         addError(error.message || 'Failed to get reply.');
+        // Optionally save error message?
       } finally {
         userInput.disabled = false;
         sendButton.disabled = false;
         userInput.focus();
       }
     }
+
+    // ====================== SIDEBAR TOGGLE (MOBILE) ======================
+    function openSidebar() {
+      sidebar.classList.add('open');
+      overlay.classList.add('open');
+    }
+    function closeSidebar() {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('open');
+    }
+
+    // ====================== EVENT LISTENERS ======================
+    menuToggle.addEventListener('click', openSidebar);
+    overlay.addEventListener('click', closeSidebar);
+    newChatBtn.addEventListener('click', newChat);
 
     sendButton.addEventListener('click', () => {
       const text = userInput.value.trim();
@@ -207,7 +508,33 @@
       }
     });
 
-    addMessage("Hello! I'm EbubZ AI, created by Ebube Arinze. How can I help you today?", 'bot');
+    // Simple HTML escaping
+    function escapeHtml(text) {
+      const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+      };
+      return text.replace(/[&<>"']/g, m => map[m]);
+    }
+
+    // ====================== INITIALIZATION ======================
+    function init() {
+      loadChatsFromStorage();
+      const chatIds = Object.keys(chats);
+      if (chatIds.length > 0) {
+        currentChatId = chatIds[chatIds.length - 1]; // most recent
+      } else {
+        newChat();
+      }
+      renderMessages();
+      renderChatList();
+      updateHeaderTitle();
+    }
+
+    init();
   </script>
 </body>
 </html>
