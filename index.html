@@ -291,7 +291,7 @@
 
   <script>
     // ====================== CONFIGURATION ======================
-    const BACKEND_URL = '/.netlify/functions/chat';   // Netlify function endpoint
+    const BACKEND_URL = '/api/chat';   // Vercel serverless function
     let currentModel = localStorage.getItem('ebubz_model') || 'llama-3.1-8b-instant';
     let attachedFile = null;
 
@@ -505,7 +505,7 @@
       currentChatTitle.addEventListener('keydown', onEnter);
     });
 
-    // ====================== API CALL (Netlify compatible) ======================
+    // ====================== API CALL (Vercel backend) ======================
     async function sendMessage(userMessage, isRegenerate = false) {
       if (!currentChatId) newChat();
 
