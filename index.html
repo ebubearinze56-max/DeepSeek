@@ -15,14 +15,13 @@
       overflow: hidden;
     }
 
-    /* ===== LAYOUT ===== */
     .app {
       display: flex;
       height: 100vh;
       width: 100%;
     }
 
-    /* ===== SIDEBAR ===== */
+    /* SIDEBAR */
     .sidebar {
       width: 280px;
       background: #16213e;
@@ -48,11 +47,10 @@
       font-size: 0.7rem;
       opacity: 0.6;
     }
-    .new-chat-btn {
+    .new-chat-btn, .clear-all-btn {
       display: block;
       width: 100%;
       padding: 10px;
-      background: #e94560;
       color: #fff;
       border: none;
       border-radius: 6px;
@@ -61,7 +59,16 @@
       transition: background 0.2s;
       margin-top: 8px;
     }
+    .new-chat-btn {
+      background: #e94560;
+    }
     .new-chat-btn:hover { background: #c23152; }
+    .clear-all-btn {
+      background: #333;
+      margin-top: 4px;
+      font-size: 0.8rem;
+    }
+    .clear-all-btn:hover { background: #555; }
 
     .chat-list {
       flex: 1;
@@ -78,12 +85,8 @@
       margin-bottom: 4px;
       word-break: break-word;
     }
-    .chat-item:hover {
-      background: #2a2a5a;
-    }
-    .chat-item.active {
-      background: #0f3460;
-    }
+    .chat-item:hover { background: #2a2a5a; }
+    .chat-item.active { background: #0f3460; }
     .chat-item .title {
       flex: 1;
       font-size: 0.9rem;
@@ -103,7 +106,7 @@
     }
     .chat-item .delete-btn:hover { opacity: 1; }
 
-    /* ===== MAIN CHAT AREA ===== */
+    /* MAIN */
     .main {
       flex: 1;
       display: flex;
@@ -115,11 +118,10 @@
       padding: 16px 20px;
       background: #0f3460;
       border-bottom: 1px solid #2a2a4a;
-      font-size: 1rem;
-      font-weight: 600;
       display: flex;
       align-items: center;
       gap: 12px;
+      flex-wrap: wrap;
     }
     .menu-toggle {
       background: none;
@@ -127,8 +129,38 @@
       color: #fff;
       font-size: 1.4rem;
       cursor: pointer;
-      display: none; /* hidden on desktop */
+      display: none;
     }
+    #current-chat-title {
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 1px dashed transparent;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+    #current-chat-title:hover { border-bottom-color: #aaa; }
+    #current-chat-title[contenteditable="true"] {
+      background: #16213e;
+      padding: 2px 8px;
+      border-radius: 4px;
+      border-bottom: none;
+    }
+    .model-selector {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .model-selector select {
+      padding: 6px 10px;
+      background: #1a1a2e;
+      color: #fff;
+      border: 1px solid #2a2a4a;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      outline: none;
+    }
+
     .chat-messages {
       flex: 1;
       overflow-y: auto;
@@ -144,6 +176,7 @@
       line-height: 1.5;
       word-wrap: break-word;
       white-space: pre-wrap;
+      position: relative;
     }
     .user-message {
       align-self: flex-end;
@@ -157,6 +190,40 @@
       color: #e0e0e0;
       border-bottom-left-radius: 4px;
     }
+    .message-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 6px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .bot-message:hover .message-actions {
+      opacity: 1;
+    }
+    .action-btn {
+      background: rgba(255,255,255,0.1);
+      border: none;
+      color: #fff;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .action-btn:hover { background: rgba(255,255,255,0.2); }
+    .code-block {
+      background: #0d1117;
+      padding: 12px;
+      border-radius: 6px;
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+      font-size: 0.9rem;
+      overflow-x: auto;
+      margin: 8px 0;
+      white-space: pre;
+    }
+
     .input-area {
       display: flex;
       padding: 12px;
@@ -196,7 +263,7 @@
       font-size: 0.9rem;
     }
 
-    /* ===== OVERLAY (for mobile sidebar) ===== */
+    /* OVERLAY */
     .overlay {
       display: none;
       position: fixed;
@@ -208,7 +275,6 @@
       z-index: 9;
     }
 
-    /* ===== RESPONSIVE RULES ===== */
     @media (max-width: 768px) {
       .sidebar {
         position: fixed;
@@ -220,15 +286,10 @@
         z-index: 20;
         transition: transform 0.3s ease;
       }
-      .sidebar.open {
-        transform: translateX(0);
-      }
-      .overlay.open {
-        display: block;
-      }
-      .menu-toggle {
-        display: block;
-      }
+      .sidebar.open { transform: translateX(0); }
+      .overlay.open { display: block; }
+      .menu-toggle { display: block; }
+      .model-selector { display: none; } /* hide on small screens to save space */
     }
   </style>
 </head>
@@ -240,18 +301,27 @@
         <h1>🤖 EbubZ AI</h1>
         <div class="creator">by Ebube Arinze</div>
         <button class="new-chat-btn" id="new-chat-btn">＋ New Chat</button>
+        <button class="clear-all-btn" id="clear-all-btn">🗑️ Clear all chats</button>
       </div>
       <div class="chat-list" id="chat-list"></div>
     </div>
 
-    <!-- OVERLAY (mobile) -->
+    <!-- OVERLAY -->
     <div class="overlay" id="overlay"></div>
 
     <!-- MAIN CHAT -->
     <div class="main">
       <div class="chat-header">
         <button class="menu-toggle" id="menu-toggle">☰</button>
-        <span id="current-chat-title">New Chat</span>
+        <span id="current-chat-title" title="Click to rename">New Chat</span>
+        <div class="model-selector">
+          <label for="model-select">Model:</label>
+          <select id="model-select">
+            <option value="llama-3.1-8b-instant">Llama 3.1 8B (fast)</option>
+            <option value="gemma2-9b-it">Gemma 2 9B</option>
+            <option value="llama-3.2-3b-preview">Llama 3.2 3B (preview)</option>
+          </select>
+        </div>
       </div>
       <div class="chat-messages" id="chat-messages"></div>
       <div class="input-area">
@@ -265,7 +335,6 @@
     // ====================== CONFIGURATION ======================
     const API_KEY = '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';
     const API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-    const MODEL = 'llama-3.1-8b-instant';
 
     // ====================== DOM ELEMENTS ======================
     const sidebar = document.getElementById('sidebar');
@@ -273,38 +342,35 @@
     const menuToggle = document.getElementById('menu-toggle');
     const chatListEl = document.getElementById('chat-list');
     const newChatBtn = document.getElementById('new-chat-btn');
+    const clearAllBtn = document.getElementById('clear-all-btn');
     const messagesContainer = document.getElementById('chat-messages');
     const userInput = document.getElementById('user-input');
     const sendButton = document.getElementById('send-button');
     const currentChatTitle = document.getElementById('current-chat-title');
+    const modelSelect = document.getElementById('model-select');
 
     // ====================== STATE ======================
-    let chats = {};            // { chatId: { title, messages: [] } }
+    let chats = {};
     let currentChatId = null;
+    let currentModel = localStorage.getItem('ebubz_model') || 'llama-3.1-8b-instant';
 
-    // ====================== LOCAL STORAGE HELPERS ======================
-    function saveChatsToStorage() {
+    // ====================== LOCAL STORAGE ======================
+    function saveChats() {
       localStorage.setItem('ebubz_chats', JSON.stringify(chats));
     }
-
-    function loadChatsFromStorage() {
+    function loadChats() {
       const stored = localStorage.getItem('ebubz_chats');
-      if (stored) {
-        try {
-          chats = JSON.parse(stored);
-        } catch(e) {
-          chats = {};
-        }
-      } else {
-        chats = {};
-      }
+      chats = stored ? JSON.parse(stored) : {};
+    }
+    function saveModel() {
+      localStorage.setItem('ebubz_model', currentModel);
     }
 
     // ====================== SIDEBAR RENDERING ======================
     function renderChatList() {
       chatListEl.innerHTML = '';
-      const chatIds = Object.keys(chats).sort((a, b) => (chats[b].timestamp || 0) - (chats[a].timestamp || 0));
-      chatIds.forEach(id => {
+      const ids = Object.keys(chats).sort((a, b) => (chats[b].timestamp || 0) - (chats[a].timestamp || 0));
+      ids.forEach(id => {
         const chat = chats[id];
         const div = document.createElement('div');
         div.className = 'chat-item' + (id === currentChatId ? ' active' : '');
@@ -337,7 +403,7 @@
         timestamp: Date.now()
       };
       currentChatId = id;
-      saveChatsToStorage();
+      saveChats();
       renderMessages();
       renderChatList();
       updateHeaderTitle();
@@ -348,15 +414,14 @@
     function deleteChat(id) {
       if (confirm('Delete this conversation?')) {
         delete chats[id];
-        saveChatsToStorage();
+        saveChats();
         if (currentChatId === id) {
-          // Switch to most recent remaining chat or create new one
-          const remainingIds = Object.keys(chats);
-          if (remainingIds.length > 0) {
-            currentChatId = remainingIds[remainingIds.length - 1];
+          const remaining = Object.keys(chats);
+          if (remaining.length > 0) {
+            currentChatId = remaining[remaining.length - 1];
           } else {
-            currentChatId = null;
-            newChat(); // create new default
+            newChat();
+            return;
           }
         }
         renderMessages();
@@ -365,27 +430,80 @@
       }
     }
 
+    function clearAllChats() {
+      if (Object.keys(chats).length === 0) return;
+      if (confirm('Delete ALL conversations? This cannot be undone.')) {
+        chats = {};
+        saveChats();
+        newChat();
+      }
+    }
+
     // ====================== MESSAGES ======================
     function renderMessages() {
       messagesContainer.innerHTML = '';
       if (!currentChatId || !chats[currentChatId]) return;
       const msgs = chats[currentChatId].messages;
-      msgs.forEach(msg => {
-        addMessageElement(msg.text, msg.sender);
+      msgs.forEach((msg, index) => {
+        addMessageElement(msg.text, msg.sender, index);
       });
+      // If last message is from bot, add action buttons
+      if (msgs.length > 0 && msgs[msgs.length - 1].sender === 'bot') {
+        addActionButtonsToLastBotMessage();
+      }
     }
 
-    function addMessageElement(text, sender) {
+    function addMessageElement(text, sender, index = null) {
       const msgDiv = document.createElement('div');
-      msgDiv.classList.add('message', sender === 'user' ? 'user-message' : 'bot-message');
-      msgDiv.textContent = text;
+      msgDiv.className = 'message ' + (sender === 'user' ? 'user-message' : 'bot-message');
+      // Process code blocks
+      const formatted = formatMessageText(text);
+      msgDiv.innerHTML = formatted;
+      if (sender === 'bot') {
+        // Add copy button
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'message-actions';
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'action-btn';
+        copyBtn.innerHTML = '📋 Copy';
+        copyBtn.addEventListener('click', () => {
+          navigator.clipboard.writeText(text);
+          copyBtn.innerHTML = '✅ Copied';
+          setTimeout(() => { copyBtn.innerHTML = '📋 Copy'; }, 2000);
+        });
+        actionsDiv.appendChild(copyBtn);
+        // If it's the last bot message, we'll add regenerate button later
+        msgDiv.appendChild(actionsDiv);
+      }
       messagesContainer.appendChild(msgDiv);
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
+    function addActionButtonsToLastBotMessage() {
+      const lastMsg = messagesContainer.querySelector('.bot-message:last-child');
+      if (!lastMsg) return;
+      const actionsDiv = lastMsg.querySelector('.message-actions');
+      if (!actionsDiv) return;
+      // Check if regenerate button already exists
+      if (!actionsDiv.querySelector('.regenerate-btn')) {
+        const regenBtn = document.createElement('button');
+        regenBtn.className = 'action-btn regenerate-btn';
+        regenBtn.innerHTML = '🔄 Regenerate';
+        regenBtn.addEventListener('click', regenerateLastResponse);
+        actionsDiv.appendChild(regenBtn);
+      }
+    }
+
+    function formatMessageText(text) {
+      // Replace code blocks (``` ... ```) with styled blocks
+      return text.replace(/```(\w*)\n?([\s\S]*?)```/g, (match, lang, code) => {
+        return `<div class="code-block">${escapeHtml(code.trim())}</div>`;
+      });
+    }
+
     function addError(text) {
       const errDiv = document.createElement('div');
-      errDiv.classList.add('error-message');
+      errDiv.className = 'error-message';
       errDiv.textContent = '❌ ' + text;
       messagesContainer.appendChild(errDiv);
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
@@ -399,33 +517,75 @@
       }
     }
 
-    // Update title based on first user message
+    // Auto-title from first user message
     function autoTitle(chatId, message) {
-      if (chats[chatId].title === 'New Chat') {
-        const title = message.length > 30 ? message.substring(0, 30) + '...' : message;
-        chats[chatId].title = title;
-        saveChatsToStorage();
+      if (chats[chatId] && chats[chatId].title === 'New Chat') {
+        chats[chatId].title = message.length > 30 ? message.substring(0, 30) + '...' : message;
+        saveChats();
         renderChatList();
         updateHeaderTitle();
       }
     }
 
+    // ====================== RENAME CHAT ======================
+    currentChatTitle.addEventListener('click', () => {
+      if (!currentChatId || !chats[currentChatId]) return;
+      const oldTitle = chats[currentChatId].title;
+      currentChatTitle.contentEditable = 'true';
+      currentChatTitle.focus();
+      // Select all text
+      const range = document.createRange();
+      range.selectNodeContents(currentChatTitle);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+
+      const saveRename = () => {
+        currentChatTitle.contentEditable = 'false';
+        const newTitle = currentChatTitle.textContent.trim() || 'New Chat';
+        chats[currentChatId].title = newTitle;
+        saveChats();
+        renderChatList();
+        updateHeaderTitle();
+        currentChatTitle.removeEventListener('blur', saveRename);
+        currentChatTitle.removeEventListener('keydown', onEnter);
+      };
+
+      const onEnter = (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          saveRename();
+        }
+      };
+
+      currentChatTitle.addEventListener('blur', saveRename);
+      currentChatTitle.addEventListener('keydown', onEnter);
+    });
+
     // ====================== API CALL ======================
-    async function sendMessage(userMessage) {
+    async function sendMessage(userMessage, isRegenerate = false) {
       if (!currentChatId) newChat();
 
-      // Save user message
-      chats[currentChatId].messages.push({ text: userMessage, sender: 'user' });
-      chats[currentChatId].timestamp = Date.now();
-      saveChatsToStorage();
-      renderMessages();
-      autoTitle(currentChatId, userMessage);
+      if (!isRegenerate) {
+        // Save user message
+        chats[currentChatId].messages.push({ text: userMessage, sender: 'user' });
+        chats[currentChatId].timestamp = Date.now();
+        saveChats();
+        renderMessages();
+        autoTitle(currentChatId, userMessage);
+      } else {
+        // Remove the last bot message before regenerating
+        const msgs = chats[currentChatId].messages;
+        if (msgs.length > 0 && msgs[msgs.length - 1].sender === 'bot') {
+          msgs.pop();
+        }
+        saveChats();
+        renderMessages();
+      }
 
-      // Update input state
       userInput.disabled = true;
       sendButton.disabled = true;
 
-      // Prepare conversation context (last N messages)
       const recentMessages = chats[currentChatId].messages.slice(-10).map(m => ({
         role: m.sender === 'user' ? 'user' : 'assistant',
         content: m.text
@@ -442,7 +602,7 @@
             'Authorization': `Bearer ${API_KEY}`
           },
           body: JSON.stringify({
-            model: MODEL,
+            model: currentModel,
             messages: apiMessages,
             temperature: 0.7,
             max_tokens: 2000
@@ -457,16 +617,14 @@
         const data = await response.json();
         const botReply = data.choices[0].message.content;
 
-        // Save bot reply
         chats[currentChatId].messages.push({ text: botReply, sender: 'bot' });
         chats[currentChatId].timestamp = Date.now();
-        saveChatsToStorage();
+        saveChats();
         renderMessages();
 
       } catch (error) {
         console.error('API Error:', error);
         addError(error.message || 'Failed to get reply.');
-        // Optionally save error message?
       } finally {
         userInput.disabled = false;
         sendButton.disabled = false;
@@ -474,7 +632,17 @@
       }
     }
 
-    // ====================== SIDEBAR TOGGLE (MOBILE) ======================
+    function regenerateLastResponse() {
+      if (!currentChatId || !chats[currentChatId]) return;
+      const msgs = chats[currentChatId].messages;
+      if (msgs.length === 0 || msgs[msgs.length - 1].sender !== 'bot') return;
+      // We resend the last user message (which is second-to-last)
+      const lastUserMsg = msgs[msgs.length - 2];
+      if (!lastUserMsg || lastUserMsg.sender !== 'user') return;
+      sendMessage(lastUserMsg.text, true);
+    }
+
+    // ====================== SIDEBAR TOGGLE ======================
     function openSidebar() {
       sidebar.classList.add('open');
       overlay.classList.add('open');
@@ -488,6 +656,13 @@
     menuToggle.addEventListener('click', openSidebar);
     overlay.addEventListener('click', closeSidebar);
     newChatBtn.addEventListener('click', newChat);
+    clearAllBtn.addEventListener('click', clearAllChats);
+
+    modelSelect.value = currentModel;
+    modelSelect.addEventListener('change', (e) => {
+      currentModel = e.target.value;
+      saveModel();
+    });
 
     sendButton.addEventListener('click', () => {
       const text = userInput.value.trim();
@@ -508,26 +683,19 @@
       }
     });
 
-    // Simple HTML escaping
     function escapeHtml(text) {
-      const map = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;'
-      };
+      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
       return text.replace(/[&<>"']/g, m => map[m]);
     }
 
-    // ====================== INITIALIZATION ======================
+    // ====================== INIT ======================
     function init() {
-      loadChatsFromStorage();
-      const chatIds = Object.keys(chats);
-      if (chatIds.length > 0) {
-        currentChatId = chatIds[chatIds.length - 1]; // most recent
+      loadChats();
+      if (Object.keys(chats).length > 0) {
+        currentChatId = Object.keys(chats).sort((a, b) => (chats[b].timestamp || 0) - (chats[a].timestamp || 0))[0];
       } else {
         newChat();
+        return;
       }
       renderMessages();
       renderChatList();
