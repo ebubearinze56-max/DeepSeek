@@ -40,9 +40,6 @@
     }
     .app { display: flex; height: 100vh; width: 100%; }
 
-    /* Hide reCAPTCHA */
-    #recaptcha-container { display: none !important; }
-
     /* AUTH OVERLAY */
     #auth-overlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -69,7 +66,6 @@
       cursor: pointer; width: 100%; margin-top: 8px;
     }
     .auth-box .google-btn { background: #4285f4; }
-    .auth-box .yahoo-btn { background: #720e9e; }
     .auth-box .switch-link {
       margin-top: 12px; font-size: 0.8rem; cursor: pointer;
       color: var(--accent); text-decoration: underline; text-align: center; display: block;
@@ -227,9 +223,6 @@
     <div class="auth-box" id="auth-box"></div>
   </div>
 
-  <!-- reCAPTCHA container (hidden, not used) -->
-  <div id="recaptcha-container"></div>
-
   <!-- SETTINGS PANEL -->
   <div class="settings-panel" id="settings-panel">
     <h2>Customize Theme</h2>
@@ -301,7 +294,6 @@
       createUserWithEmailAndPassword,
       signInWithEmailAndPassword,
       GoogleAuthProvider,
-      YahooAuthProvider,
       signInWithPopup,
       onAuthStateChanged,
       signOut
@@ -319,7 +311,6 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const googleProvider = new GoogleAuthProvider();
-    const yahooProvider = new YahooAuthProvider();
 
     // ====================== CONFIGURATION ======================
     const BACKEND_URL = '/api/chat';
@@ -370,7 +361,7 @@
     const synth = window.speechSynthesis;
 
     // ====================== AUTHENTICATION UI ======================
-    let authMode = 'main'; // 'main' or 'email'
+    let authMode = 'main';
 
     function renderAuthForm() {
       authBox.innerHTML = '';
@@ -378,16 +369,12 @@
         authBox.innerHTML = `
           <h2>Welcome to EbubZ AI</h2>
           <button class="google-btn" id="google-signin">🔵 Sign in with Google</button>
-          <button class="yahoo-btn" id="yahoo-signin" style="margin-top:8px;">🟣 Sign in with Yahoo</button>
           <div class="divider"><span>or</span></div>
           <button id="email-signin">📧 Sign in with Email</button>
           <p style="text-align:center; font-size:0.75rem; margin-top:8px; opacity:0.7;">Yahoo, Gmail, any email works</p>
         `;
         document.getElementById('google-signin').addEventListener('click', () => {
           signInWithPopup(auth, googleProvider).catch(err => showError(err.message));
-        });
-        document.getElementById('yahoo-signin').addEventListener('click', () => {
-          signInWithPopup(auth, yahooProvider).catch(err => showError(err.message));
         });
         document.getElementById('email-signin').addEventListener('click', () => { authMode = 'email'; renderAuthForm(); });
       }
@@ -435,7 +422,6 @@
       }
     }
 
-    // Auth state listener
     onAuthStateChanged(auth, (user) => {
       if (user) {
         authOverlay.style.display = 'none';
