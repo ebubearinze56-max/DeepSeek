@@ -40,6 +40,11 @@
     }
     .app { display: flex; height: 100vh; width: 100%; }
 
+    /* Hide the reCAPTCHA badge (phone auth not using it currently) */
+    #recaptcha-container {
+      display: none !important;
+    }
+
     /* AUTH OVERLAY */
     #auth-overlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
