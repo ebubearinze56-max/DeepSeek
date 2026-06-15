@@ -155,6 +155,21 @@
     }
     .user-message { align-self: flex-end; background: var(--msg-user); border-bottom-right-radius: 4px; }
     .bot-message { align-self: flex-start; background: var(--msg-bot); border-bottom-left-radius: 4px; }
+
+    /* ⭐ NEW: Thinking bubble style (no more solid blue box) */
+    .message.thinking {
+      align-self: flex-start;
+      background: transparent !important;
+      border: 1px dashed var(--border);
+      font-style: italic;
+      opacity: 0.7;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 1; }
+    }
+
     .message-actions { display: flex; gap: 6px; margin-top: 6px; opacity: 0; transition: opacity 0.2s; }
     .bot-message:hover .message-actions { opacity: 1; }
     .action-btn {
@@ -191,7 +206,7 @@
     #file-input { display: none; }
     .error-message { color: var(--accent); text-align: center; padding: 8px; font-size: 0.9rem; }
 
-    /* FILE CONTEXT BANNER */
+    /* ⭐ NEW: File context banner */
     .file-context-banner {
       display: flex; align-items: center; gap: 8px;
       padding: 8px 16px; background: var(--input-bg);
@@ -213,6 +228,9 @@
     .mindmap span {
       background: var(--accent); color: #fff; padding: 4px 8px;
       border-radius: 12px; font-size: 0.75rem;
+    }
+    .mindmap .empty-hint {
+      background: transparent !important; opacity: 0.5; padding: 2px 8px;
     }
 
     /* SETTINGS PANEL */
@@ -363,14 +381,22 @@
       confession: "You are EbubZ AI in 'Confession/Diary Mode'. You are a compassionate, non-judgmental listener. Be extra empathetic, validate feelings, and keep responses gentle and supportive. Never share or judge."
     };
 
-    // Stopwords to filter out of the mind map (so common words & code don't dominate)
+    // Stopwords — filters out common English + code keywords from the mind map
     const STOPWORDS = new Set([
       'the','a','an','and','or','but','if','then','else','when','while','for','to','of','in','on','at','by','with','as','is','was','are','were','be','been','being','this','that','these','those','it','its','i','you','your','me','my','we','our','they','their','he','she','his','her','them','him','us',
       'have','has','had','do','does','did','will','would','could','should','can','may','might','must','shall',
       'not','no','yes','all','any','some','what','which','who','whom','where','why','how',
       'about','into','through','during','before','after','above','below','from','up','down','out','off','over','under','again','further','once','here','there',
-      'const','let','var','function','class','div','span','return','true','false','null','none','undefined',
-      'background','padding','flex','color','display','borderradius','fontsize','width','height','margin','border','font','text','none','block','inline','hidden','visible','auto','center','left','right'
+      'one','two','three','just','like','than','other','such','only','own','same','too','very','also','well','more','most',
+      'const','let','var','function','class','return','true','false','null','none','undefined','async','await','import','export','from','new','this','typeof','instanceof',
+      'div','span','button','input','select','option','label','form','script','style','meta','head','body','html','lang','charset','viewport',
+      'background','padding','margin','border','color','display','width','height','font','fontsize','fontfamily','fontweight','textalign','textdecoration','texttransform','lineheight','letterspacing',
+      'flex','grid','block','inline','absolute','relative','fixed','static','sticky','hidden','visible','auto','center','left','right','top','bottom','none','inherit','initial',
+      'cursor','pointer','hover','focus','active','disabled','checked','selected','readonly','required','placeholder','value','name','type','id','href','src','alt','title','content','data','role','aria',
+      'vartxt','varaccent','varbg','varborder','varfont','varmsg','currentchatid','savechats','loadchats','renderchatlist','rendermessages','sendmessage','initapp','loadtheme',
+      'localstorage','setitem','getitem','removeitem','document','window','queryselector','addeventlistener','preventdefault','innerhtml','textcontent','appendchild','createelement',
+      'fetch','json','string','number','boolean','array','object','error','success','response','request','event','handler','callback','promise','resolve','reject',
+      'monday','tuesday','wednesday','thursday','friday','saturday','sunday','today','yesterday','tomorrow','date','time','year','month','day','hour','minute','second'
     ]);
 
     // DOM elements
@@ -468,7 +494,6 @@
       }
     }
 
-    // Auth state listener
     onAuthStateChanged(auth, (user) => {
       if (user) {
         authOverlay.style.display = 'none';
@@ -600,7 +625,6 @@
     fileInput.addEventListener('change', async (e) => {
       const file = e.target.files[0];
       if (!file) return;
-      // Limit file size to ~1MB to avoid blowing up API context
       if (file.size > 1_000_000) {
         alert('File too large. Please upload documents under 1 MB.');
         fileInput.value = '';
@@ -622,7 +646,6 @@
 
     // ====================== PROMPT CHAINS ======================
     function createQuickActions() {
-      // Guard against duplicates if initApp runs again
       if (document.getElementById('quick-actions-container')) return;
 
       const actions = ['Explain like I’m 5', 'Summarize', 'Translate to French', 'Write a poem'];
@@ -667,7 +690,7 @@
       const topWords = Object.entries(words).sort((a, b) => b[1] - a[1]).slice(0, 10);
       mindmapEl.innerHTML = topWords.length
         ? topWords.map(([word]) => `<span>${escapeHtml(word)}</span>`).join('')
-        : '<span style="opacity:0.5; background:transparent; padding:2px 8px;">No keywords yet</span>';
+        : '<span class="empty-hint">No keywords yet</span>';
     }
 
     // ====================== SIDEBAR & CHAT LOGIC ======================
@@ -729,7 +752,6 @@
 
     function switchChat(id) {
       currentChatId = id;
-      // Clear document context when switching chats so old files don't leak in
       clearFileContext();
       renderMessages();
       renderChatList();
@@ -842,7 +864,6 @@
       }
     }
 
-    // RENAME CHAT
     currentChatTitle.addEventListener('click', () => {
       if (!currentChatId || !chats[currentChatId]) return;
       currentChatTitle.contentEditable = 'true';
@@ -865,6 +886,22 @@
       currentChatTitle.addEventListener('blur', save);
       currentChatTitle.addEventListener('keydown', onEnter);
     });
+
+    // ====================== THINKING BUBBLE (NEW) ======================
+    function addThinkingBubble() {
+      const div = document.createElement('div');
+      div.className = 'message bot-message thinking';
+      div.id = 'thinking-bubble';
+      div.innerHTML = '⏳ Thinking...';
+      messagesContainer.appendChild(div);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      return div;
+    }
+
+    function removeThinkingBubble() {
+      const el = document.getElementById('thinking-bubble');
+      if (el) el.remove();
+    }
 
     // ====================== DEEPTHINK ======================
     async function performDeepThink(messages) {
@@ -907,7 +944,6 @@
         content: m.text
       }));
 
-      // Build system prompt (include document context if attached)
       let systemContent = personas[currentPersona];
       if (documentContext) {
         const truncated = documentContext.length > 8000
@@ -921,8 +957,7 @@
         ...recent
       ];
 
-      addMessageElement('⏳ Thinking...', 'bot');
-      const thinkingMsg = messagesContainer.lastChild;
+      addThinkingBubble();
 
       try {
         let finalMessages = apiMessages;
@@ -944,13 +979,13 @@
 
         if (!response.ok) {
           const errData = await response.json().catch(() => ({}));
-          throw new Error(errData.error || `HTTP ${response.status}`);
+          throw new Error(errData.error || `HTTP ${response.status} — backend not deployed or API key missing`);
         }
 
         const data = await response.json();
         const botReply = data.choices?.[0]?.message?.content || '⚠️ Empty response from model.';
 
-        thinkingMsg.remove();
+        removeThinkingBubble();
         addMessageElement(botReply, 'bot');
         chats[currentChatId].messages.push({ text: botReply, sender: 'bot' });
         chats[currentChatId].timestamp = Date.now();
@@ -960,7 +995,7 @@
         renderChatList();
       } catch (error) {
         console.error(error);
-        thinkingMsg.remove();
+        removeThinkingBubble();
         addError(error.message || 'Failed to get reply');
       } finally {
         userInput.disabled = false;
