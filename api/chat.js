@@ -9,10 +9,10 @@ export default async function handler(req, res) {
 
   try {
     const {
-      model = "llama-3.1-8b-instant",
+      model = "llama-3.3-70b-versatile",
       messages,
       temperature = 0.7,
-      max_tokens = 2000
+      max_tokens = 1500
     } = req.body || {};
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
