@@ -156,7 +156,7 @@
     .user-message { align-self: flex-end; background: var(--msg-user); border-bottom-right-radius: 4px; }
     .bot-message { align-self: flex-start; background: var(--msg-bot); border-bottom-left-radius: 4px; }
 
-    /* ⭐ NEW: Thinking bubble style (no more solid blue box) */
+    /* Thinking bubble style */
     .message.thinking {
       align-self: flex-start;
       background: transparent !important;
@@ -206,7 +206,7 @@
     #file-input { display: none; }
     .error-message { color: var(--accent); text-align: center; padding: 8px; font-size: 0.9rem; }
 
-    /* ⭐ NEW: File context banner */
+    /* File context banner */
     .file-context-banner {
       display: flex; align-items: center; gap: 8px;
       padding: 8px 16px; background: var(--input-bg);
@@ -366,7 +366,8 @@
     const BACKEND_URL = '/api/chat';
     const FORMSPREE_URL = 'https://formspree.io/f/meewpobq';
 
-    let currentModel = 'llama-3.1-8b-instant';
+    // ⭐ FIX: Use a model with higher TPM limit
+    let currentModel = 'llama-3.3-70b-versatile';
     let documentContext = null;
     let documentName = null;
     let deepThink = false;
@@ -381,7 +382,6 @@
       confession: "You are EbubZ AI in 'Confession/Diary Mode'. You are a compassionate, non-judgmental listener. Be extra empathetic, validate feelings, and keep responses gentle and supportive. Never share or judge."
     };
 
-    // Stopwords — filters out common English + code keywords from the mind map
     const STOPWORDS = new Set([
       'the','a','an','and','or','but','if','then','else','when','while','for','to','of','in','on','at','by','with','as','is','was','are','were','be','been','being','this','that','these','those','it','its','i','you','your','me','my','we','our','they','their','he','she','his','her','them','him','us',
       'have','has','had','do','does','did','will','would','could','should','can','may','might','must','shall',
@@ -887,7 +887,7 @@
       currentChatTitle.addEventListener('keydown', onEnter);
     });
 
-    // ====================== THINKING BUBBLE (NEW) ======================
+    // ====================== THINKING BUBBLE ======================
     function addThinkingBubble() {
       const div = document.createElement('div');
       div.className = 'message bot-message thinking';
@@ -910,7 +910,7 @@
         const resp = await fetch(BACKEND_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: currentModel, messages: thinkPrompt, temperature: 0.3, max_tokens: 500 })
+          body: JSON.stringify({ model: currentModel, messages: thinkPrompt, temperature: 0.3, max_tokens: 300 })
         });
         if (!resp.ok) return null;
         const data = await resp.json();
@@ -939,15 +939,17 @@
       userInput.disabled = true;
       sendButton.disabled = true;
 
-      let recent = chats[currentChatId].messages.slice(-10).map(m => ({
+      // ⭐ FIX: Only send last 4 messages to stay under TPM limit
+      let recent = chats[currentChatId].messages.slice(-4).map(m => ({
         role: m.sender === 'user' ? 'user' : 'assistant',
         content: m.text
       }));
 
+      // ⭐ FIX: Reduced from 8000 to 2000 chars to stay under TPM limit
       let systemContent = personas[currentPersona];
       if (documentContext) {
-        const truncated = documentContext.length > 8000
-          ? documentContext.substring(0, 8000) + '...[truncated]'
+        const truncated = documentContext.length > 2000
+          ? documentContext.substring(0, 2000) + '...[truncated]'
           : documentContext;
         systemContent += `\n\nThe user has uploaded a document${documentName ? ` ("${documentName}")` : ''}. Use it as context when relevant:\n${truncated}`;
       }
@@ -974,12 +976,17 @@
         const response = await fetch(BACKEND_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: currentModel, messages: finalMessages, temperature: 0.7, max_tokens: 2000 })
+          body: JSON.stringify({ 
+            model: currentModel, 
+            messages: finalMessages, 
+            temperature: 0.7, 
+            max_tokens: 1500  // ⭐ Reduced from 2000
+          })
         });
 
         if (!response.ok) {
           const errData = await response.json().catch(() => ({}));
-          throw new Error(errData.error || `HTTP ${response.status} — backend not deployed or API key missing`);
+          throw new Error(errData.error || `HTTP ${response.status}`);
         }
 
         const data = await response.json();
