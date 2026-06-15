@@ -104,13 +104,27 @@
     .chat-list { flex: 1; overflow-y: auto; padding: 8px; }
     .chat-item {
       padding: 10px 12px; border-radius: 6px; cursor: pointer;
-      display: flex; justify-content: space-between; align-items: center;
+      display: flex; justify-content: space-between; align-items: flex-start;
       margin-bottom: 4px; word-break: break-word; color: var(--text);
+      gap: 6px;
     }
     .chat-item:hover { background: rgba(255,255,255,0.1); }
     .chat-item.active { background: var(--header-bg); }
-    .chat-item .title { flex: 1; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .chat-item .delete-btn { background: none; border: none; color: var(--accent); font-size: 1rem; cursor: pointer; margin-left: 8px; opacity: 0.6; }
+    .chat-item .title-block { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    .chat-item .title {
+      font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .chat-item .meta {
+      font-size: 0.7rem; opacity: 0.6; display: flex; gap: 6px; align-items: center;
+    }
+    .chat-item .preview {
+      font-size: 0.72rem; opacity: 0.7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      max-width: 200px;
+    }
+    .chat-item .delete-btn {
+      background: none; border: none; color: var(--accent); font-size: 1rem;
+      cursor: pointer; opacity: 0.6; flex-shrink: 0;
+    }
     .chat-item .delete-btn:hover { opacity: 1; }
 
     /* MAIN */
@@ -161,10 +175,10 @@
     .file-attachment img { max-width: 200px; max-height: 150px; border-radius: 4px; }
     .input-area {
       display: flex; padding: 12px; border-top: 1px solid var(--border);
-      background: var(--header-bg); gap: 8px;
+      background: var(--header-bg); gap: 8px; flex-wrap: wrap;
     }
     #user-input {
-      flex: 1; padding: 10px 16px; border: none; border-radius: 8px;
+      flex: 1; min-width: 200px; padding: 10px 16px; border: none; border-radius: 8px;
       background: var(--input-bg); color: var(--text); font-size: 1rem; outline: none;
     }
     #send-button, #file-upload-btn, #voice-btn {
@@ -176,6 +190,19 @@
     #send-button:disabled { background: #555; cursor: not-allowed; }
     #file-input { display: none; }
     .error-message { color: var(--accent); text-align: center; padding: 8px; font-size: 0.9rem; }
+
+    /* FILE CONTEXT BANNER */
+    .file-context-banner {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 16px; background: var(--input-bg);
+      border-top: 1px solid var(--border); font-size: 0.8rem;
+    }
+    .file-context-banner .file-name { flex: 1; opacity: 0.8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .file-context-banner .clear-file {
+      background: var(--accent); color: #fff; border: none;
+      border-radius: 4px; padding: 3px 8px; cursor: pointer; font-size: 0.75rem;
+    }
+    .file-context-banner .clear-file:hover { filter: brightness(1.1); }
 
     /* MIND MAP */
     .mindmap {
@@ -276,6 +303,11 @@
       </div>
       <div class="chat-messages" id="chat-messages"></div>
       <div class="mindmap" id="mindmap"></div>
+      <div class="file-context-banner" id="file-context-banner" style="display:none;">
+        <span>📎</span>
+        <span class="file-name" id="file-context-name"></span>
+        <button class="clear-file" id="clear-file-btn">✕ Remove</button>
+      </div>
       <div class="input-area">
         <button id="voice-btn" title="Voice input">🎤</button>
         <input type="text" id="user-input" placeholder="Ask anything..." autofocus>
@@ -318,6 +350,7 @@
 
     let currentModel = 'llama-3.1-8b-instant';
     let documentContext = null;
+    let documentName = null;
     let deepThink = false;
     let currentPersona = 'assistant';
 
@@ -329,6 +362,16 @@
       professor: "You are Professor EbubZ, an academic AI. Use formal, precise language; cite concepts; explain thoroughly as if to a university student.",
       confession: "You are EbubZ AI in 'Confession/Diary Mode'. You are a compassionate, non-judgmental listener. Be extra empathetic, validate feelings, and keep responses gentle and supportive. Never share or judge."
     };
+
+    // Stopwords to filter out of the mind map (so common words & code don't dominate)
+    const STOPWORDS = new Set([
+      'the','a','an','and','or','but','if','then','else','when','while','for','to','of','in','on','at','by','with','as','is','was','are','were','be','been','being','this','that','these','those','it','its','i','you','your','me','my','we','our','they','their','he','she','his','her','them','him','us',
+      'have','has','had','do','does','did','will','would','could','should','can','may','might','must','shall',
+      'not','no','yes','all','any','some','what','which','who','whom','where','why','how',
+      'about','into','through','during','before','after','above','below','from','up','down','out','off','over','under','again','further','once','here','there',
+      'const','let','var','function','class','div','span','return','true','false','null','none','undefined',
+      'background','padding','flex','color','display','borderradius','fontsize','width','height','margin','border','font','text','none','block','inline','hidden','visible','auto','center','left','right'
+    ]);
 
     // DOM elements
     const sidebar = document.getElementById('sidebar');
@@ -354,6 +397,9 @@
     const authOverlay = document.getElementById('auth-overlay');
     const authBox = document.getElementById('auth-box');
     const mainApp = document.getElementById('main-app');
+    const fileContextBanner = document.getElementById('file-context-banner');
+    const fileContextName = document.getElementById('file-context-name');
+    const clearFileBtn = document.getElementById('clear-file-btn');
 
     let chats = {};
     let currentChatId = null;
@@ -422,11 +468,11 @@
       }
     }
 
-    // Auth state listener – forces overlay removal
+    // Auth state listener
     onAuthStateChanged(auth, (user) => {
       if (user) {
         authOverlay.style.display = 'none';
-        authOverlay.innerHTML = '';  // clear any leftover blue box
+        authOverlay.innerHTML = '';
         mainApp.style.display = 'flex';
         if (!chatListEl.hasChildNodes()) {
           initApp();
@@ -532,22 +578,60 @@
     }
 
     // ====================== FILE UPLOAD ======================
+    function updateFileContextBanner() {
+      if (documentContext) {
+        fileContextBanner.style.display = 'flex';
+        fileContextName.textContent = documentName || 'Attached document';
+      } else {
+        fileContextBanner.style.display = 'none';
+      }
+    }
+
+    function clearFileContext() {
+      documentContext = null;
+      documentName = null;
+      fileInput.value = '';
+      updateFileContextBanner();
+    }
+
+    clearFileBtn.addEventListener('click', clearFileContext);
+
     fileUploadBtn.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', async (e) => {
       const file = e.target.files[0];
       if (!file) return;
-      const text = await file.text();
-      documentContext = text;
-      userInput.value = 'Summarize the uploaded document.';
+      // Limit file size to ~1MB to avoid blowing up API context
+      if (file.size > 1_000_000) {
+        alert('File too large. Please upload documents under 1 MB.');
+        fileInput.value = '';
+        return;
+      }
+      try {
+        const text = await file.text();
+        documentContext = text;
+        documentName = file.name;
+        userInput.value = userInput.value.trim() || 'Summarize the uploaded document.';
+        userInput.focus();
+        updateFileContextBanner();
+      } catch (err) {
+        console.error('File read error', err);
+        alert('Could not read that file.');
+      }
       fileInput.value = '';
-      userInput.focus();
     });
 
     // ====================== PROMPT CHAINS ======================
     function createQuickActions() {
+      // Guard against duplicates if initApp runs again
+      if (document.getElementById('quick-actions-container')) return;
+
       const actions = ['Explain like I’m 5', 'Summarize', 'Translate to French', 'Write a poem'];
       const container = document.createElement('div');
-      container.style.display = 'flex'; container.style.gap = '6px'; container.style.padding = '6px 12px';
+      container.id = 'quick-actions-container';
+      container.style.display = 'flex';
+      container.style.gap = '6px';
+      container.style.padding = '6px 12px';
+      container.style.flexWrap = 'wrap';
       actions.forEach(action => {
         const btn = document.createElement('button');
         btn.textContent = action;
@@ -574,53 +658,125 @@
         chats[currentChatId].messages.forEach(msg => {
           msg.text.split(/\s+/).forEach(word => {
             const w = word.toLowerCase().replace(/[^a-z]/g, '');
-            if (w.length > 3) words[w] = (words[w] || 0) + 1;
+            if (w.length > 3 && !STOPWORDS.has(w)) {
+              words[w] = (words[w] || 0) + 1;
+            }
           });
         });
       }
-      const topWords = Object.entries(words).sort((a,b) => b[1] - a[1]).slice(0, 10);
-      mindmapEl.innerHTML = topWords.map(([word]) => `<span>${word}</span>`).join('');
+      const topWords = Object.entries(words).sort((a, b) => b[1] - a[1]).slice(0, 10);
+      mindmapEl.innerHTML = topWords.length
+        ? topWords.map(([word]) => `<span>${escapeHtml(word)}</span>`).join('')
+        : '<span style="opacity:0.5; background:transparent; padding:2px 8px;">No keywords yet</span>';
     }
 
     // ====================== SIDEBAR & CHAT LOGIC ======================
     function saveChats() { localStorage.setItem('ebubz_chats', JSON.stringify(chats)); }
     function loadChats() { const s = localStorage.getItem('ebubz_chats'); chats = s ? JSON.parse(s) : {}; }
 
+    function formatRelativeDate(ts) {
+      if (!ts) return '';
+      const d = new Date(ts);
+      const now = new Date();
+      const sameDay = d.toDateString() === now.toDateString();
+      if (sameDay) return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const diffDays = Math.floor((now - d) / (1000 * 60 * 60 * 24));
+      if (diffDays === 1) return 'Yesterday';
+      if (diffDays < 7) return d.toLocaleDateString([], { weekday: 'short' });
+      return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+
+    function getChatPreview(chat) {
+      if (!chat.messages || !chat.messages.length) return 'No messages yet';
+      const firstUser = chat.messages.find(m => m.sender === 'user');
+      if (!firstUser) return 'No messages yet';
+      return firstUser.text.length > 40 ? firstUser.text.substring(0, 40) + '…' : firstUser.text;
+    }
+
     function renderChatList() {
       chatListEl.innerHTML = '';
-      const ids = Object.keys(chats).sort((a,b) => (chats[b].timestamp||0) - (chats[a].timestamp||0));
+      const ids = Object.keys(chats).sort((a, b) => (chats[b].timestamp || 0) - (chats[a].timestamp || 0));
+      if (ids.length === 0) {
+        const empty = document.createElement('div');
+        empty.style.opacity = '0.5';
+        empty.style.fontSize = '0.85rem';
+        empty.style.padding = '12px';
+        empty.style.textAlign = 'center';
+        empty.textContent = 'No chats yet';
+        chatListEl.appendChild(empty);
+        return;
+      }
       ids.forEach(id => {
         const chat = chats[id];
         const div = document.createElement('div');
         div.className = 'chat-item' + (id === currentChatId ? ' active' : '');
-        div.innerHTML = `<span class="title">${escapeHtml(chat.title||'New Chat')}</span><button class="delete-btn" data-id="${id}">🗑️</button>`;
-        div.querySelector('.title').addEventListener('click', () => switchChat(id));
+        div.innerHTML = `
+          <div class="title-block">
+            <span class="title">${escapeHtml(chat.title || 'New Chat')}</span>
+            <div class="meta">
+              <span class="preview">${escapeHtml(getChatPreview(chat))}</span>
+              <span>·</span>
+              <span>${formatRelativeDate(chat.timestamp)}</span>
+            </div>
+          </div>
+          <button class="delete-btn" data-id="${id}" title="Delete">🗑️</button>
+        `;
+        div.querySelector('.title-block').addEventListener('click', () => switchChat(id));
         div.querySelector('.delete-btn').addEventListener('click', (e) => { e.stopPropagation(); deleteChat(id); });
         chatListEl.appendChild(div);
       });
     }
 
-    function switchChat(id) { currentChatId = id; renderMessages(); renderChatList(); updateHeaderTitle(); closeSidebar(); updateMindMap(); }
+    function switchChat(id) {
+      currentChatId = id;
+      // Clear document context when switching chats so old files don't leak in
+      clearFileContext();
+      renderMessages();
+      renderChatList();
+      updateHeaderTitle();
+      closeSidebar();
+      updateMindMap();
+    }
+
     function newChat() {
       const id = Date.now().toString();
       chats[id] = { title: 'New Chat', messages: [], timestamp: Date.now() };
-      currentChatId = id; documentContext = null;
-      saveChats(); renderMessages(); renderChatList(); updateHeaderTitle(); closeSidebar(); userInput.focus(); updateMindMap();
+      currentChatId = id;
+      clearFileContext();
+      saveChats();
+      renderMessages();
+      renderChatList();
+      updateHeaderTitle();
+      closeSidebar();
+      userInput.focus();
+      updateMindMap();
     }
+
     function deleteChat(id) {
       if (confirm('Delete this conversation?')) {
-        delete chats[id]; saveChats();
+        delete chats[id];
+        saveChats();
         if (currentChatId === id) {
           const remaining = Object.keys(chats);
-          currentChatId = remaining.length > 0 ? remaining[remaining.length-1] : null;
-          if (!currentChatId) newChat();
+          currentChatId = remaining.length > 0 ? remaining[remaining.length - 1] : null;
+          if (!currentChatId) {
+            newChat();
+            return;
+          }
         }
-        renderMessages(); renderChatList(); updateHeaderTitle(); updateMindMap();
+        renderMessages();
+        renderChatList();
+        updateHeaderTitle();
+        updateMindMap();
       }
     }
+
     function clearAllChats() {
       if (Object.keys(chats).length && confirm('Delete ALL conversations?')) {
-        chats = {}; saveChats(); newChat(); updateMindMap();
+        chats = {};
+        saveChats();
+        newChat();
+        updateMindMap();
       }
     }
 
@@ -629,7 +785,7 @@
       if (!currentChatId || !chats[currentChatId]) return;
       const msgs = chats[currentChatId].messages;
       msgs.forEach((msg, idx) => addMessageElement(msg.text, msg.sender, idx));
-      if (msgs.length && msgs[msgs.length-1].sender === 'bot') addActionButtonsToLastBotMessage();
+      if (msgs.length && msgs[msgs.length - 1].sender === 'bot') addActionButtonsToLastBotMessage();
     }
 
     function addMessageElement(text, sender, index = null) {
@@ -641,7 +797,11 @@
         actions.className = 'message-actions';
         const copyBtn = document.createElement('button');
         copyBtn.className = 'action-btn'; copyBtn.textContent = '📋 Copy';
-        copyBtn.addEventListener('click', () => { navigator.clipboard.writeText(text); copyBtn.textContent = '✅ Copied'; setTimeout(() => copyBtn.textContent = '📋 Copy', 2000); });
+        copyBtn.addEventListener('click', () => {
+          navigator.clipboard.writeText(text);
+          copyBtn.textContent = '✅ Copied';
+          setTimeout(() => copyBtn.textContent = '📋 Copy', 2000);
+        });
         const speakBtn = document.createElement('button');
         speakBtn.className = 'action-btn'; speakBtn.textContent = '🔊 Speak';
         speakBtn.addEventListener('click', () => speakText(text));
@@ -659,7 +819,8 @@
       const actions = last.querySelector('.message-actions');
       if (!actions || actions.querySelector('.regenerate-btn')) return;
       const regenBtn = document.createElement('button');
-      regenBtn.className = 'action-btn regenerate-btn'; regenBtn.textContent = '🔄 Regenerate';
+      regenBtn.className = 'action-btn regenerate-btn';
+      regenBtn.textContent = '🔄 Regenerate';
       regenBtn.addEventListener('click', regenerateLastResponse);
       actions.appendChild(regenBtn);
     }
@@ -674,21 +835,29 @@
 
     function autoTitle(chatId, msg) {
       if (chats[chatId]?.title === 'New Chat') {
-        chats[chatId].title = msg.length > 30 ? msg.substring(0,30)+'...' : msg;
-        saveChats(); renderChatList(); updateHeaderTitle();
+        chats[chatId].title = msg.length > 30 ? msg.substring(0, 30) + '...' : msg;
+        saveChats();
+        renderChatList();
+        updateHeaderTitle();
       }
     }
 
     // RENAME CHAT
     currentChatTitle.addEventListener('click', () => {
       if (!currentChatId || !chats[currentChatId]) return;
-      currentChatTitle.contentEditable = 'true'; currentChatTitle.focus();
-      const range = document.createRange(); range.selectNodeContents(currentChatTitle);
-      const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+      currentChatTitle.contentEditable = 'true';
+      currentChatTitle.focus();
+      const range = document.createRange();
+      range.selectNodeContents(currentChatTitle);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
       const save = () => {
         currentChatTitle.contentEditable = 'false';
         chats[currentChatId].title = currentChatTitle.textContent.trim() || 'New Chat';
-        saveChats(); renderChatList(); updateHeaderTitle();
+        saveChats();
+        renderChatList();
+        updateHeaderTitle();
         currentChatTitle.removeEventListener('blur', save);
         currentChatTitle.removeEventListener('keydown', onEnter);
       };
@@ -699,15 +868,20 @@
 
     // ====================== DEEPTHINK ======================
     async function performDeepThink(messages) {
-      const thinkPrompt = [...messages, { role: 'user', content: 'Think step by step before answering. Provide only your reasoning.' }];
-      const resp = await fetch(BACKEND_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: currentModel, messages: thinkPrompt, temperature: 0.3, max_tokens: 500 })
-      });
-      if (!resp.ok) return null;
-      const data = await resp.json();
-      return data.choices[0].message.content;
+      try {
+        const thinkPrompt = [...messages, { role: 'user', content: 'Think step by step before answering. Provide only your reasoning.' }];
+        const resp = await fetch(BACKEND_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: currentModel, messages: thinkPrompt, temperature: 0.3, max_tokens: 500 })
+        });
+        if (!resp.ok) return null;
+        const data = await resp.json();
+        return data.choices?.[0]?.message?.content || null;
+      } catch (e) {
+        console.error('DeepThink failed', e);
+        return null;
+      }
     }
 
     // ====================== API CALL ======================
@@ -716,25 +890,36 @@
       if (!isRegenerate) {
         chats[currentChatId].messages.push({ text: userMessage, sender: 'user' });
         chats[currentChatId].timestamp = Date.now();
-        saveChats(); renderMessages(); autoTitle(currentChatId, userMessage);
+        saveChats();
+        renderMessages();
+        autoTitle(currentChatId, userMessage);
       } else {
         const msgs = chats[currentChatId].messages;
-        if (msgs.length && msgs[msgs.length-1].sender === 'bot') msgs.pop();
-        saveChats(); renderMessages();
+        if (msgs.length && msgs[msgs.length - 1].sender === 'bot') msgs.pop();
+        saveChats();
+        renderMessages();
       }
-      userInput.disabled = true; sendButton.disabled = true;
+      userInput.disabled = true;
+      sendButton.disabled = true;
 
       let recent = chats[currentChatId].messages.slice(-10).map(m => ({
         role: m.sender === 'user' ? 'user' : 'assistant',
         content: m.text
       }));
 
+      // Build system prompt (include document context if attached)
+      let systemContent = personas[currentPersona];
       if (documentContext) {
-        recent.unshift({ role: 'system', content: `The following is a document the user uploaded: ${documentContext}` });
+        const truncated = documentContext.length > 8000
+          ? documentContext.substring(0, 8000) + '...[truncated]'
+          : documentContext;
+        systemContent += `\n\nThe user has uploaded a document${documentName ? ` ("${documentName}")` : ''}. Use it as context when relevant:\n${truncated}`;
       }
 
-      const systemPrompt = { role: 'system', content: personas[currentPersona] };
-      const apiMessages = [systemPrompt, ...recent];
+      const apiMessages = [
+        { role: 'system', content: systemContent },
+        ...recent
+      ];
 
       addMessageElement('⏳ Thinking...', 'bot');
       const thinkingMsg = messagesContainer.lastChild;
@@ -744,7 +929,10 @@
         if (deepThink) {
           const reasoning = await performDeepThink(apiMessages);
           if (reasoning) {
-            finalMessages = [...apiMessages, { role: 'assistant', content: `[Internal reasoning: ${reasoning}]` }];
+            finalMessages = [
+              ...apiMessages,
+              { role: 'assistant', content: `[Internal reasoning: ${reasoning}]` }
+            ];
           }
         }
 
@@ -760,7 +948,7 @@
         }
 
         const data = await response.json();
-        const botReply = data.choices[0].message.content;
+        const botReply = data.choices?.[0]?.message?.content || '⚠️ Empty response from model.';
 
         thinkingMsg.remove();
         addMessageElement(botReply, 'bot');
@@ -769,12 +957,15 @@
         saveChats();
         addActionButtonsToLastBotMessage();
         updateMindMap();
+        renderChatList();
       } catch (error) {
         console.error(error);
         thinkingMsg.remove();
         addError(error.message || 'Failed to get reply');
       } finally {
-        userInput.disabled = false; sendButton.disabled = false; userInput.focus();
+        userInput.disabled = false;
+        sendButton.disabled = false;
+        userInput.focus();
       }
     }
 
@@ -782,7 +973,7 @@
       if (!currentChatId || !chats[currentChatId]) return;
       const msgs = chats[currentChatId].messages;
       if (msgs.length < 2) return;
-      const lastUser = msgs[msgs.length-2];
+      const lastUser = msgs[msgs.length - 2];
       if (lastUser?.sender !== 'user') return;
       sendMessage(lastUser.text, true);
     }
@@ -792,6 +983,7 @@
       errDiv.className = 'error-message';
       errDiv.textContent = '❌ ' + text;
       messagesContainer.appendChild(errDiv);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
     // ====================== SIDEBAR TOGGLE ======================
@@ -813,7 +1005,7 @@
 
     function escapeHtml(text) {
       const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-      return text.replace(/[&<>"']/g, m => map[m]);
+      return String(text).replace(/[&<>"']/g, m => map[m]);
     }
 
     function initApp() {
@@ -821,15 +1013,14 @@
       loadChats();
       const ids = Object.keys(chats);
       if (ids.length) {
-        currentChatId = ids.sort((a,b) => (chats[b].timestamp||0)-(chats[a].timestamp||0))[0];
+        currentChatId = ids.sort((a, b) => (chats[b].timestamp || 0) - (chats[a].timestamp || 0))[0];
+        renderMessages();
+        renderChatList();
+        updateHeaderTitle();
+        updateMindMap();
       } else {
         newChat();
-        return;
       }
-      renderMessages();
-      renderChatList();
-      updateHeaderTitle();
-      updateMindMap();
       createQuickActions();
     }
 
